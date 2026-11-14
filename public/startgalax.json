@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "description": "Startfil för Bokgalaxen. Här läggs böcker och kopplingar som bibliotekarier har gjort. Filen är tom tills de första har byggts i byggläget.",
+  "books": [],
+  "relationTypes": [
+    { "id": "samma-stamning", "name": "samma stämning", "directed": false, "reverseName": null },
+    { "id": "nasta-steg", "name": "nästa steg", "directed": true, "reverseName": "steget före" },
+    { "id": "samma-tema", "name": "samma tema, annan genre", "directed": false, "reverseName": null },
+    { "id": "berattarrost", "name": "om du gillade berättarrösten", "directed": false, "reverseName": null },
+    { "id": "serien", "name": "för den som läser serien", "directed": true, "reverseName": "läs före den här" }
+  ],
+  "tags": [],
+  "bookTags": [],
+  "relations": []
+}

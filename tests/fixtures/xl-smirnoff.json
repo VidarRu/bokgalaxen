@@ -1,0 +1,893 @@
+{
+ "items": [
+  {
+   "extent": [
+    {
+     "@type": "Extent",
+     "label": "407 sidor"
+    }
+   ],
+   "@type": "PhysicalResource",
+   "editionStatement": "Storstilsutgåva",
+   "librissearch:instanceIdentifier": "9789175414522",
+   "hasDimensions": {
+    "@type": "Dimensions",
+    "label": [
+     "23 cm"
+    ]
+   },
+   "instanceOf": {
+    "contribution": [
+     {
+      "agent": {
+       "lifeSpan": "1964-",
+       "@type": "Person",
+       "familyName": "Smirnoff",
+       "givenName": "Karin",
+       "@id": "https://libris.kb.se/7hgzc2735qh8cs50#it"
+      },
+      "role": [
+       {
+        "code": "aut",
+        "@type": "Role",
+        "@id": "https://id.kb.se/relator/author",
+        "prefLabelByLang": {
+         "sv": "Författare",
+         "en": "Author"
+        }
+       }
+      ],
+      "@type": "PrimaryContribution"
+     }
+    ],
+    "@type": "Monograph",
+    "subject": [
+     {
+      "@type": "Topic",
+      "prefLabel": "Glesbygd",
+      "@id": "https://id.kb.se/term/sao/Glesbygd"
+     },
+     {
+      "@type": "Geographic",
+      "prefLabel": "Sverige",
+      "@id": "https://id.kb.se/term/sao/Sverige"
+     },
+     {
+      "@type": "Topic",
+      "prefLabel": "Syskonrelationer",
+      "@id": "https://id.kb.se/term/sao/Syskonrelationer"
+     },
+     {
+      "termComponentList": [
+       {
+        "@type": "Geographic",
+        "prefLabel": "Sverige"
+       },
+       {
+        "@type": "GeographicSubdivision",
+        "prefLabel": "Norrland"
+       }
+      ],
+      "@type": "ComplexSubject",
+      "prefLabel": "Sverige--Norrland",
+      "@id": "https://id.kb.se/term/sao/Sverige--Norrland"
+     }
+    ],
+    "language": [
+     {
+      "code": "swe",
+      "@type": "Language",
+      "@id": "https://id.kb.se/language/swe",
+      "prefLabelByLang": {
+       "sv": "Svenska",
+       "en": "Swedish"
+      }
+     }
+    ],
+    "@id": "https://libris.kb.se/6pzc3mwr4g4kw562#it",
+    "hasTitle": [
+     {
+      "@type": "Title",
+      "mainTitle": "Jag for ner till bror"
+     }
+    ],
+    "category": [
+     {
+      "singularLabelByLang": {
+       "sv": "Roman",
+       "en": "Novel"
+      },
+      "@type": "GenreForm",
+      "prefLabel": "Romaner",
+      "@id": "https://id.kb.se/term/saogf/Romaner",
+      "prefLabelByLang": {
+       "en": "Novels"
+      }
+     },
+     {
+      "@type": "GenreForm",
+      "prefLabel": "Familjeskildringar",
+      "@id": "https://id.kb.se/term/saogf/Familjeskildringar",
+      "prefLabelByLang": {
+       "en": "Domestic fiction"
+      }
+     },
+     {
+      "code": "txt",
+      "@type": "ContentType",
+      "@id": "https://id.kb.se/term/rda/Text",
+      "prefLabelByLang": {
+       "sv": "Text",
+       "en": "Text"
+      }
+     }
+    ],
+    "classification": [
+     {
+      "code": "839.738",
+      "@type": "ClassificationDdc"
+     },
+     {
+      "code": "Hc.01",
+      "@type": "Classification"
+     }
+    ],
+    "librissearch:dewey": "839.738"
+   },
+   "publication": [
+    {
+     "date": [
+      "[2019]"
+     ],
+     "country": [
+      {
+       "code": "sw",
+       "@type": "Country",
+       "@id": "https://id.kb.se/country/sw",
+       "prefLabelByLang": {
+        "sv": "Sverige",
+        "en": "Sweden"
+       }
+      }
+     ],
+     "agent": {
+      "@type": "Agent",
+      "label": [
+       "BTJ förlag"
+      ]
+     },
+     "year": "2019",
+     "librissearch:year_4_digits_keyword": "2019",
+     "@type": "PrimaryPublication",
+     "librissearch:year": "2019",
+     "year_4_digits_short": 2019,
+     "librissearch:year_4_digits_short": 2019,
+     "place": [
+      {
+       "@type": "Place",
+       "label": [
+        "[Lund]"
+       ]
+      }
+     ],
+     "year_4_digits_keyword": "2019"
+    }
+   ],
+   "@id": "https://libris.kb.se/x6p5qmvcvlms4qpj#it",
+   "hasTitle": [
+    {
+     "@type": "Title",
+     "mainTitle": "Jag for ner till bror"
+    }
+   ],
+   "identifiedBy": [
+    {
+     "@type": "ISBN",
+     "value": "9789175414522"
+    }
+   ],
+   "responsibilityStatement": "Karin Smirnoff",
+   "seriesMembership": [
+    {
+     "seriesStatement": [
+      "BTJ storstilsböcker"
+     ],
+     "@type": "SeriesMembership"
+    }
+   ],
+   "category": [
+    {
+     "code": "nc",
+     "@type": "CarrierType",
+     "searchLabelByLang": {
+      "sv": "Bok",
+      "en": "Book"
+     },
+     "@id": "https://id.kb.se/term/rda/Volume",
+     "prefLabelByLang": {
+      "sv": "Volym",
+      "en": "Volume"
+     },
+     "labelByLang": {
+      "sv": "Volym",
+      "en": "Volume"
+     }
+    },
+    {
+     "code": "d",
+     "@type": [
+      "marc:ItemType",
+      "marc:BooksItemType",
+      "marc:SerialsOriginalItemType"
+     ],
+     "@id": "https://id.kb.se/marc/LargePrint",
+     "prefLabelByLang": {
+      "sv": "Storstilspublikation",
+      "en": "Large print"
+     }
+    },
+    {
+     "@type": "CarrierForm",
+     "@id": "https://id.kb.se/term/saobf/Print",
+     "prefLabelByLang": {
+      "sv": "Tryck",
+      "en": "Print"
+     }
+    }
+   ]
+  },
+  {
+   "extent": [
+    {
+     "@type": "Extent",
+     "label": "318, [1] sidor"
+    }
+   ],
+   "copyright": [
+    {
+     "date": "©2018",
+     "@type": "Copyright"
+    }
+   ],
+   "@type": "PhysicalResource",
+   "editionStatement": "Första upplagan",
+   "librissearch:instanceIdentifier": "9789177950981",
+   "hasDimensions": {
+    "@type": "Dimensions",
+    "label": [
+     "22 cm"
+    ]
+   },
+   "instanceOf": {
+    "contribution": [
+     {
+      "agent": {
+       "lifeSpan": "1964-",
+       "@type": "Person",
+       "familyName": "Smirnoff",
+       "givenName": "Karin",
+       "@id": "https://libris.kb.se/7hgzc2735qh8cs50#it"
+      },
+      "role": [
+       {
+        "code": "aut",
+        "@type": "Role",
+        "@id": "https://id.kb.se/relator/author",
+        "prefLabelByLang": {
+         "sv": "Författare",
+         "en": "Author"
+        }
+       }
+      ],
+      "@type": "PrimaryContribution"
+     }
+    ],
+    "@type": "Monograph",
+    "subject": [
+     {
+      "@type": "Topic",
+      "prefLabel": "Glesbygd",
+      "@id": "https://id.kb.se/term/sao/Glesbygd"
+     },
+     {
+      "@type": "Geographic",
+      "prefLabel": "Sverige",
+      "@id": "https://id.kb.se/term/sao/Sverige"
+     },
+     {
+      "@type": "Topic",
+      "prefLabel": "Syskonrelationer",
+      "@id": "https://id.kb.se/term/sao/Syskonrelationer"
+     },
+     {
+      "termComponentList": [
+       {
+        "@type": "Geographic",
+        "prefLabel": "Sverige"
+       },
+       {
+        "@type": "GeographicSubdivision",
+        "prefLabel": "Norrland"
+       }
+      ],
+      "@type": "ComplexSubject",
+      "prefLabel": "Sverige--Norrland",
+      "@id": "https://id.kb.se/term/sao/Sverige--Norrland"
+     }
+    ],
+    "language": [
+     {
+      "code": "swe",
+      "@type": "Language",
+      "@id": "https://id.kb.se/language/swe",
+      "prefLabelByLang": {
+       "sv": "Svenska",
+       "en": "Swedish"
+      }
+     }
+    ],
+    "@id": "https://libris.kb.se/6pzc3mwr4g4kw562#it",
+    "hasTitle": [
+     {
+      "@type": "Title",
+      "mainTitle": "Jag for ner till bror"
+     }
+    ],
+    "category": [
+     {
+      "singularLabelByLang": {
+       "sv": "Roman",
+       "en": "Novel"
+      },
+      "@type": "GenreForm",
+      "prefLabel": "Romaner",
+      "@id": "https://id.kb.se/term/saogf/Romaner",
+      "prefLabelByLang": {
+       "en": "Novels"
+      }
+     },
+     {
+      "@type": "GenreForm",
+      "prefLabel": "Familjeskildringar",
+      "@id": "https://id.kb.se/term/saogf/Familjeskildringar",
+      "prefLabelByLang": {
+       "en": "Domestic fiction"
+      }
+     },
+     {
+      "code": "txt",
+      "@type": "ContentType",
+      "@id": "https://id.kb.se/term/rda/Text",
+      "prefLabelByLang": {
+       "sv": "Text",
+       "en": "Text"
+      }
+     }
+    ],
+    "classification": [
+     {
+      "code": "839.738",
+      "@type": "ClassificationDdc"
+     },
+     {
+      "code": "Hc.01",
+      "@type": "Classification"
+     }
+    ],
+    "librissearch:dewey": "839.738"
+   },
+   "publication": [
+    {
+     "date": [
+      "[2018]"
+     ],
+     "country": {
+      "code": "sw",
+      "@type": "Country",
+      "@id": "https://id.kb.se/country/sw",
+      "prefLabelByLang": {
+       "sv": "Sverige",
+       "en": "Sweden"
+      }
+     },
+     "agent": {
+      "@type": "Agent",
+      "label": [
+       "Polaris"
+      ]
+     },
+     "year": "2018",
+     "librissearch:year_4_digits_keyword": "2018",
+     "@type": "PrimaryPublication",
+     "librissearch:year": "2018",
+     "year_4_digits_short": 2018,
+     "librissearch:year_4_digits_short": 2018,
+     "place": [
+      {
+       "@type": "Place",
+       "label": [
+        "Stockholm"
+       ]
+      }
+     ],
+     "year_4_digits_keyword": "2018"
+    }
+   ],
+   "@id": "https://libris.kb.se/m5zfg5nz3v9lnxq#it",
+   "hasTitle": [
+    {
+     "@type": "Title",
+     "mainTitle": "Jag for ner till bror",
+     "subtitle": "roman"
+    }
+   ],
+   "identifiedBy": [
+    {
+     "@type": "ISBN",
+     "qualifier": [
+      "inbunden"
+     ],
+     "value": "9789177950981"
+    }
+   ],
+   "responsibilityStatement": "Karin Smirnoff",
+   "category": [
+    {
+     "code": "nc",
+     "@type": "CarrierType",
+     "searchLabelByLang": {
+      "sv": "Bok",
+      "en": "Book"
+     },
+     "@id": "https://id.kb.se/term/rda/Volume",
+     "prefLabelByLang": {
+      "sv": "Volym",
+      "en": "Volume"
+     },
+     "labelByLang": {
+      "sv": "Volym",
+      "en": "Volume"
+     }
+    },
+    {
+     "@type": "CarrierForm",
+     "@id": "https://id.kb.se/term/saobf/Print",
+     "prefLabelByLang": {
+      "sv": "Tryck",
+      "en": "Print"
+     }
+    }
+   ]
+  },
+  {
+   "@type": "DigitalResource",
+   "librissearch:instanceIdentifier": "9789177951018",
+   "instanceOf": {
+    "contribution": [
+     {
+      "agent": {
+       "lifeSpan": "1964-",
+       "@type": "Person",
+       "familyName": "Smirnoff",
+       "givenName": "Karin",
+       "@id": "https://libris.kb.se/7hgzc2735qh8cs50#it"
+      },
+      "role": [
+       {
+        "code": "aut",
+        "@type": "Role",
+        "@id": "https://id.kb.se/relator/author",
+        "prefLabelByLang": {
+         "sv": "Författare",
+         "en": "Author"
+        }
+       }
+      ],
+      "@type": "PrimaryContribution"
+     }
+    ],
+    "@type": "Monograph",
+    "subject": [
+     {
+      "@type": "Topic",
+      "prefLabel": "Glesbygd",
+      "@id": "https://id.kb.se/term/sao/Glesbygd"
+     },
+     {
+      "@type": "Geographic",
+      "prefLabel": "Sverige",
+      "@id": "https://id.kb.se/term/sao/Sverige"
+     },
+     {
+      "@type": "Topic",
+      "prefLabel": "Syskonrelationer",
+      "@id": "https://id.kb.se/term/sao/Syskonrelationer"
+     },
+     {
+      "termComponentList": [
+       {
+        "@type": "Geographic",
+        "prefLabel": "Sverige"
+       },
+       {
+        "@type": "GeographicSubdivision",
+        "prefLabel": "Norrland"
+       }
+      ],
+      "@type": "ComplexSubject",
+      "prefLabel": "Sverige--Norrland",
+      "@id": "https://id.kb.se/term/sao/Sverige--Norrland"
+     }
+    ],
+    "language": [
+     {
+      "code": "swe",
+      "@type": "Language",
+      "@id": "https://id.kb.se/language/swe",
+      "prefLabelByLang": {
+       "sv": "Svenska",
+       "en": "Swedish"
+      }
+     }
+    ],
+    "@id": "https://libris.kb.se/6pzc3mwr4g4kw562#it",
+    "hasTitle": [
+     {
+      "@type": "Title",
+      "mainTitle": "Jag for ner till bror"
+     }
+    ],
+    "category": [
+     {
+      "singularLabelByLang": {
+       "sv": "Roman",
+       "en": "Novel"
+      },
+      "@type": "GenreForm",
+      "prefLabel": "Romaner",
+      "@id": "https://id.kb.se/term/saogf/Romaner",
+      "prefLabelByLang": {
+       "en": "Novels"
+      }
+     },
+     {
+      "@type": "GenreForm",
+      "prefLabel": "Familjeskildringar",
+      "@id": "https://id.kb.se/term/saogf/Familjeskildringar",
+      "prefLabelByLang": {
+       "en": "Domestic fiction"
+      }
+     },
+     {
+      "code": "txt",
+      "@type": "ContentType",
+      "@id": "https://id.kb.se/term/rda/Text",
+      "prefLabelByLang": {
+       "sv": "Text",
+       "en": "Text"
+      }
+     }
+    ],
+    "classification": [
+     {
+      "code": "839.738",
+      "@type": "ClassificationDdc"
+     },
+     {
+      "code": "Hc.01",
+      "@type": "Classification"
+     }
+    ],
+    "librissearch:dewey": "839.738"
+   },
+   "publication": [
+    {
+     "country": {
+      "code": "sw",
+      "@type": "Country",
+      "@id": "https://id.kb.se/country/sw",
+      "prefLabelByLang": {
+       "sv": "Sverige",
+       "en": "Sweden"
+      }
+     },
+     "agent": {
+      "@type": "Agent",
+      "label": [
+       "Polaris"
+      ]
+     },
+     "year": "2018",
+     "librissearch:year_4_digits_keyword": "2018",
+     "@type": "PrimaryPublication",
+     "librissearch:year": "2018",
+     "year_4_digits_short": 2018,
+     "librissearch:year_4_digits_short": 2018,
+     "place": [
+      {
+       "@type": "Place",
+       "label": [
+        "Stockholm"
+       ]
+      }
+     ],
+     "year_4_digits_keyword": "2018"
+    }
+   ],
+   "@id": "https://libris.kb.se/x5ts9919vctnmws2#it",
+   "hasTitle": [
+    {
+     "@type": "Title",
+     "mainTitle": "Jag for ner till bror",
+     "subtitle": "roman"
+    }
+   ],
+   "identifiedBy": [
+    {
+     "@type": "ISBN",
+     "value": "9789177951018"
+    }
+   ],
+   "responsibilityStatement": "Karin Smirnoff",
+   "classification": [
+    {
+     "code": "Hc.01/DR",
+     "@type": "Classification"
+    }
+   ],
+   "category": [
+    {
+     "code": "cr",
+     "@type": "CarrierType",
+     "@id": "https://id.kb.se/term/rda/OnlineResource",
+     "prefLabelByLang": {
+      "sv": "Onlineresurs",
+      "en": "Online resource"
+     }
+    }
+   ],
+   "digitalCharacteristic": [
+    {
+     "@type": "EncodingFormat",
+     "label": "epub"
+    }
+   ]
+  },
+  {
+   "extent": [
+    {
+     "@type": "Extent",
+     "label": "1 MP3-CD (8 tim., 15 min.)"
+    }
+   ],
+   "copyright": [
+    {
+     "date": [
+      "©2018"
+     ],
+     "@type": "Copyright"
+    }
+   ],
+   "@type": "PhysicalResource",
+   "librissearch:instanceIdentifier": "9789174957266",
+   "instanceOf": {
+    "contribution": [
+     {
+      "agent": {
+       "lifeSpan": "1964-",
+       "@type": "Person",
+       "familyName": "Smirnoff",
+       "givenName": "Karin",
+       "@id": "https://libris.kb.se/7hgzc2735qh8cs50#it"
+      },
+      "role": [
+       {
+        "code": "aut",
+        "@type": "Role",
+        "@id": "https://id.kb.se/relator/author",
+        "prefLabelByLang": {
+         "sv": "Författare",
+         "en": "Author"
+        }
+       }
+      ],
+      "@type": "PrimaryContribution"
+     },
+     {
+      "agent": {
+       "lifeSpan": "1970-",
+       "@type": "Person",
+       "familyName": "Kauppi",
+       "givenName": "Lo",
+       "@id": "https://libris.kb.se/zw9dmqxh4h6hlmf#it"
+      },
+      "role": [
+       {
+        "code": "nrt",
+        "@type": "Role",
+        "@id": "https://id.kb.se/relator/narrator",
+        "prefLabelByLang": {
+         "sv": "Berättare",
+         "en": "Narrator"
+        },
+        "altLabelByLang": {
+         "sv": "Inläsare"
+        }
+       }
+      ],
+      "@type": "Contribution"
+     }
+    ],
+    "@type": "Monograph",
+    "subject": [
+     {
+      "@type": "Topic",
+      "prefLabel": "Glesbygd",
+      "@id": "https://id.kb.se/term/sao/Glesbygd"
+     },
+     {
+      "@type": "Topic",
+      "prefLabel": "Syskonrelationer",
+      "@id": "https://id.kb.se/term/sao/Syskonrelationer"
+     },
+     {
+      "@type": "Topic",
+      "prefLabel": "Incest",
+      "@id": "https://id.kb.se/term/sao/Incest"
+     },
+     {
+      "@type": "Topic",
+      "prefLabel": "Våldtäkt",
+      "@id": "https://id.kb.se/term/sao/V%C3%A5ldt%C3%A4kt"
+     },
+     {
+      "@type": "Topic",
+      "prefLabel": "Mord",
+      "@id": "https://id.kb.se/term/sao/Mord"
+     }
+    ],
+    "language": [
+     {
+      "code": "swe",
+      "@type": "Language",
+      "@id": "https://id.kb.se/language/swe",
+      "prefLabelByLang": {
+       "sv": "Svenska",
+       "en": "Swedish"
+      }
+     }
+    ],
+    "category": [
+     {
+      "singularLabelByLang": {
+       "sv": "Ljudbok",
+       "en": "Audiobook"
+      },
+      "@type": "GenreForm",
+      "prefLabel": "Ljudböcker",
+      "@id": "https://id.kb.se/term/saogf/Ljudb%C3%B6cker",
+      "prefLabelByLang": {
+       "en": "Audiobooks"
+      }
+     },
+     {
+      "singularLabelByLang": {
+       "sv": "Roman",
+       "en": "Novel"
+      },
+      "@type": "GenreForm",
+      "prefLabel": "Romaner",
+      "@id": "https://id.kb.se/term/saogf/Romaner",
+      "prefLabelByLang": {
+       "en": "Novels"
+      }
+     },
+     {
+      "code": "f",
+      "@type": "marc:MusicTextType",
+      "@id": "https://id.kb.se/marc/Fiction",
+      "prefLabelByLang": {
+       "sv": "Skönlitterär prosa",
+       "en": "Fiction"
+      }
+     },
+     {
+      "code": "spw",
+      "@type": "ContentType",
+      "@id": "https://id.kb.se/term/rda/SpokenWord",
+      "prefLabelByLang": {
+       "sv": "Tal",
+       "en": "Spoken word"
+      }
+     }
+    ],
+    "classification": [
+     {
+      "code": "Hc.01",
+      "@type": "Classification"
+     }
+    ]
+   },
+   "publication": [
+    {
+     "country": [
+      {
+       "code": "sw",
+       "@type": "Country",
+       "@id": "https://id.kb.se/country/sw",
+       "prefLabelByLang": {
+        "sv": "Sverige",
+        "en": "Sweden"
+       }
+      }
+     ],
+     "agent": {
+      "@type": "Agent",
+      "label": [
+       "BTJ Audio, i samarbete med Polaris"
+      ]
+     },
+     "year": "2018",
+     "librissearch:year_4_digits_keyword": "2018",
+     "@type": "PrimaryPublication",
+     "librissearch:year": "2018",
+     "year_4_digits_short": 2018,
+     "librissearch:year_4_digits_short": 2018,
+     "place": [
+      {
+       "@type": "Place",
+       "label": [
+        "Lund"
+       ]
+      }
+     ],
+     "year_4_digits_keyword": "2018"
+    }
+   ],
+   "@id": "https://libris.kb.se/2bl5wvh40b536jr3#it",
+   "hasTitle": [
+    {
+     "@type": "Title",
+     "mainTitle": "Jag for ner till bror"
+    }
+   ],
+   "identifiedBy": [
+    {
+     "@type": "ISBN",
+     "qualifier": [
+      "MP3 CD"
+     ],
+     "value": "9789174957266"
+    }
+   ],
+   "responsibilityStatement": "Karin Smirnoff ; inläsare: Lo Kauppi",
+   "classification": [
+    {
+     "code": "Hc.01/LC",
+     "@type": "Classification"
+    }
+   ],
+   "category": [
+    {
+     "code": "sd",
+     "@type": "CarrierType",
+     "@id": "https://id.kb.se/term/rda/AudioDisc",
+     "prefLabelByLang": {
+      "sv": "Ljudskiva",
+      "en": "Audio disc"
+     },
+     "labelByLang": {
+      "sv": "Ljudskiva",
+      "en": "Audio Disc"
+     }
+    }
+   ],
+   "digitalCharacteristic": [
+    {
+     "@type": "EncodingFormat",
+     "label": "MP3"
+    }
+   ]
+  }
+ ]
+}
