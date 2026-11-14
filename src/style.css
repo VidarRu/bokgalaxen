@@ -1,0 +1,737 @@
+/* Bokgalaxen. Mörk rymd, varmt ljus. All text ska ha minst 4,5:1 i kontrast
+   mot sin bakgrund (WCAG 2.1 AA). */
+
+:root {
+  --space: #03040b;
+  --ink: #f3efe6;          /* 17:1 mot --space */
+  --ink-soft: #c3c8d6;     /* 11:1 */
+  --ink-faint: #9aa2b6;    /* 7:1 */
+  --gold: #ffd9a0;
+  --panel: rgba(9, 12, 26, 0.82);
+  --panel-solid: #0b0f20;
+  --line: rgba(255, 255, 255, 0.14);
+  --focus: #ffe2b0;
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--space);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --- Galaxen ---------------------------------------------------------- */
+
+.galaxy {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.galaxy canvas {
+  display: block;
+}
+
+/* En svag mörkning i kanterna drar blicken mot mitten. */
+.galaxy::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(2, 3, 9, 0.55) 100%);
+}
+
+.star-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.star-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 240px;
+  text-align: center;
+  white-space: nowrap;
+  transition: opacity 0.25s ease;
+  will-change: transform, opacity;
+  text-shadow: 0 0 6px #000, 0 0 14px #000, 0 1px 2px #000;
+}
+
+.star-label__title {
+  font-family: var(--serif);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.star-label__author {
+  display: none;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.star-label--strong .star-label__title {
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.star-label--focus .star-label__title {
+  font-size: 17px;
+  color: #fff;
+}
+
+.star-label--focus .star-label__author {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* --- Rubrik ----------------------------------------------------------- */
+
+.masthead {
+  position: fixed;
+  top: 22px;
+  left: 26px;
+  z-index: 3;
+  max-width: min(440px, calc(100vw - 52px));
+  pointer-events: none;
+  text-shadow: 0 0 12px #000, 0 0 24px #000;
+}
+
+.wordmark {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(26px, 3.4vw, 38px);
+  letter-spacing: 0.015em;
+  line-height: 1.1;
+  background: linear-gradient(100deg, #fff8ea 10%, var(--gold) 55%, #ffb98a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 14px rgba(255, 200, 130, 0.35));
+}
+
+.tagline {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.notice {
+  margin: 12px 0 0;
+  padding: 7px 11px;
+  display: inline-block;
+  pointer-events: auto;
+  font-size: 12.5px;
+  color: #ffe9c4;
+  background: rgba(60, 38, 8, 0.78);
+  border: 1px solid rgba(255, 200, 120, 0.45);
+  border-radius: 8px;
+  text-shadow: none;
+}
+
+/* --- Paneler ---------------------------------------------------------- */
+
+.panel--left {
+  position: fixed;
+  left: 26px;
+  bottom: 22px;
+  z-index: 3;
+  width: min(340px, calc(100vw - 52px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel__title {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-shadow: 0 0 10px #000;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  min-height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 13.5px;
+  backdrop-filter: blur(10px);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.chip:hover {
+  border-color: rgba(255, 217, 160, 0.6);
+}
+
+.chip__count {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip--active {
+  background: #3a2a10;
+  border-color: var(--gold);
+  box-shadow: 0 0 18px rgba(255, 200, 120, 0.35);
+}
+
+.chip--active .chip__count {
+  color: var(--gold);
+}
+
+.legend {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  font-size: 13.5px;
+}
+
+.legend summary {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  list-style-position: inside;
+}
+
+.legend__body {
+  padding: 0 14px 14px;
+  max-height: min(52vh, 460px);
+  overflow-y: auto;
+  color: var(--ink-soft);
+}
+
+.legend__truths {
+  margin: 0 0 12px;
+  padding: 0 0 0 18px;
+}
+
+.legend__truths li {
+  margin-bottom: 6px;
+}
+
+.legend__truths strong {
+  color: var(--ink);
+}
+
+.legend h3 {
+  margin: 12px 0 6px;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.legend__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+
+#legend-relations {
+  grid-template-columns: 1fr;
+}
+
+.legend__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend__note {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
+
+.dot {
+  flex: none;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 22%, var(--c) 55%);
+  box-shadow: 0 0 8px var(--c);
+}
+
+.streak {
+  flex: none;
+  display: inline-block;
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--c) 35%, #fff);
+  box-shadow: 0 0 8px var(--c);
+}
+
+/* --- Bokkortet --------------------------------------------------------- */
+
+.card {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  bottom: 78px;
+  z-index: 4;
+  width: min(380px, calc(100vw - 44px));
+  padding: 20px 20px 22px;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(14, 18, 38, 0.9), rgba(7, 9, 20, 0.92));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  animation: card-in 0.35s ease;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+
+.card__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.card__close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+}
+
+.card__head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding-right: 28px;
+}
+
+.card__title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 23px;
+  line-height: 1.2;
+  outline: none;
+}
+
+.card__author {
+  margin: 4px 0 8px;
+  color: var(--ink-soft);
+}
+
+.card__genre {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.card__tags {
+  margin: 10px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.tagmark {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.card__section {
+  margin: 22px 0 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.card__empty {
+  color: var(--ink-soft);
+}
+
+/* Genererat omslag */
+.cover {
+  flex: none;
+  width: 84px;
+  aspect-ratio: 2 / 3;
+  padding: 9px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 3px 6px 6px 3px;
+  background:
+    radial-gradient(circle at 70% 22%, color-mix(in srgb, var(--c) 85%, #fff) 0 3%, transparent 4%),
+    radial-gradient(circle at 70% 22%, color-mix(in srgb, var(--c) 55%, transparent), transparent 46%),
+    linear-gradient(160deg, #1a2040, #070914 75%);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.07), 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 22px color-mix(in srgb, var(--c) 22%, transparent);
+  overflow: hidden;
+}
+
+.cover__title {
+  margin-top: auto;
+  font-family: var(--serif);
+  font-size: 11.5px;
+  line-height: 1.2;
+  color: #fff;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cover__author {
+  margin-top: 4px;
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cover--small {
+  width: 38px;
+  padding: 4px;
+  border-radius: 2px 4px 4px 2px;
+}
+
+.cover--small .cover__title {
+  font-size: 0;
+}
+
+.tips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip {
+  padding: 12px 14px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tip__type {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.tip__book {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px;
+  margin: -6px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+
+.tip__book:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.tip__title {
+  display: block;
+  font-family: var(--serif);
+  font-size: 16.5px;
+  line-height: 1.25;
+}
+
+.tip__author {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.tip__motivation {
+  margin: 12px 0 6px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(255, 217, 160, 0.55);
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.tip__signature {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
+
+.tip__signature::before {
+  content: '– ';
+}
+
+/* --- Verktyg ----------------------------------------------------------- */
+
+.toolbar {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  font-size: 14px;
+}
+
+.button:hover {
+  border-color: rgba(255, 217, 160, 0.6);
+}
+
+.button--primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #1b1304;
+  font-weight: 600;
+}
+
+.menu {
+  position: relative;
+}
+
+.menu__list {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: 250px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.menu__list[hidden] {
+  display: none;
+}
+
+.menu__list button {
+  padding: 9px 12px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.menu__list button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.reminder {
+  position: fixed;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: min(560px, calc(100vw - 32px));
+  padding: 12px 14px 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #2b1f0a;
+  border: 1px solid rgba(255, 200, 120, 0.6);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  font-size: 14px;
+}
+
+.reminder[hidden] {
+  display: none;
+}
+
+.reminder p {
+  margin: 0;
+  flex: 1;
+}
+
+.status {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  z-index: 6;
+  max-width: min(520px, calc(100vw - 32px));
+  margin: 0;
+  padding: 9px 16px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13.5px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.status--visible {
+  opacity: 1;
+}
+
+.status:empty {
+  display: none;
+}
+
+/* --- Små skärmar -------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .masthead {
+    top: 14px;
+    left: 16px;
+  }
+
+  .tagline {
+    font-size: 13px;
+  }
+
+  .has-focus .tagline,
+  .has-focus .notice,
+  .has-focus .panel--left {
+    display: none;
+  }
+
+  .panel--left {
+    left: 12px;
+    bottom: 70px;
+    width: calc(100vw - 24px);
+  }
+
+  .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .chip {
+    flex: none;
+  }
+
+  .toolbar {
+    right: 12px;
+    bottom: 14px;
+  }
+
+  .card {
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    max-height: 58vh;
+    z-index: 7;
+  }
+
+  .status {
+    bottom: 70px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

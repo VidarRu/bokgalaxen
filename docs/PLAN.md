@@ -177,9 +177,9 @@ Det riskablaste görs först. Fable används bara i steget där det visuella avg
 
 ## Öppna frågor
 
-- [ ] **Libris i webbläsaren.** Går det att anropa Libris direkt, eller behövs en serverfunktion? XL eller Xsearch? Det avgörs i steg 1.
-- [ ] **Utgåvor.** Räcker titel plus författare för att känna igen samma bok, eller har Libris XL en verkskoppling som är bättre? Det avgörs i steg 1.
-- [ ] **Omslag.** Finns någon källa för svenska böcker, och får omslagen visas? Tills det är klart används genererade omslag.
+- [x] **Libris i webbläsaren.** Avgjort i steg 1: Libris anropas direkt, ingen serverfunktion behövs. XL först, Xsearch som reserv.
+- [x] **Utgåvor.** Avgjort i steg 1: titel plus författare är huvudregeln. XL:s verkskoppling finns inte för alla poster och används som extra ledtråd.
+- [ ] **Omslag.** Open Library saknar svenska omslag. Libris XL har bilder för en del utgåvor, men det är inte klart om de får visas. Tills dess används genererade omslag.
 - [ ] **Typer av kopplingar.** Är listan ovan rätt? Ska bibliotekarier kunna skapa egna typer?
 - [ ] **Länk till katalogen.** Vilken katalog ska länken gå till i demon, Västerviks? Hur blir det när flera bibliotek bygger i samma galax?
 - [ ] **Vem får bygga i prototypen?** Alla med länken, eller ett enkelt lösenordsskydd som på workshopsidorna?
