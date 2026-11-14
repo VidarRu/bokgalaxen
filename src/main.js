@@ -1,7 +1,6 @@
-// Startpunkten för sidan. Knyter ihop lagringen, galaxen och det lilla
-// gränssnitt som finns efter steg 3: bokkort, taggar, förklaring och
-// galaxfil-menyn. Byggläget (steg 4), utforskaläget (steg 5) och listvyn
-// (steg 6) byggs ovanpå det här.
+// Startpunkten för sidan. Knyter ihop lagringen, galaxen, bokkortet, taggar,
+// förklaringen, galaxfil-menyn och byggläget (src/build/builder.js).
+// Utforskaläget (steg 5) och listvyn (steg 6) byggs ovanpå det här.
 
 import { createStore, warnBeforeLeaving } from './data/store.js';
 import { createTestGalaxy } from './data/testdata.js';
@@ -10,21 +9,10 @@ import { describeMerge } from './data/merge.js';
 import { GENRES, getGenre } from './data/genres.js';
 import { createGalaxy } from './galaxy/galaxy.js';
 import { relationColor } from './galaxy/theme.js';
+import { createBuilder } from './build/builder.js';
+import { el, cover } from './ui/dom.js';
 
 const $ = (id) => document.getElementById(id);
-
-function el(tag, attrs = {}, children = []) {
-  const node = document.createElement(tag);
-  for (const [key, value] of Object.entries(attrs)) {
-    if (key === 'class') node.className = value;
-    else if (key === 'text') node.textContent = value;
-    else if (key === 'style') node.style.cssText = value;
-    else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
-    else if (value !== false && value !== null && value !== undefined) node.setAttribute(key, value === true ? '' : value);
-  }
-  for (const child of [].concat(children)) if (child) node.append(child);
-  return node;
-}
 
 const store = createStore();
 const galaxy = createGalaxy($('galaxy'));
@@ -32,6 +20,8 @@ window.bokgalaxen = { store, galaxy }; // för felsökning i webbläsarens konso
 
 let data = null; // galaxen som visas just nu
 let showingTestData = false;
+let mode = 'utforska'; // 'utforska' | 'bygga'
+const testParam = Number.parseInt(new URLSearchParams(location.search).get('test') ?? '', 10);
 
 function say(message) {
   $('status').textContent = message;
@@ -43,11 +33,11 @@ function say(message) {
 // --- Vad som visas ------------------------------------------------------
 
 function show({ relayout = false } = {}) {
-  const params = new URLSearchParams(location.search);
-  const testCount = Number.parseInt(params.get('test') ?? '', 10);
+  const testCount = testParam;
   const empty = store.galaxy.books.length === 0;
 
-  showingTestData = Number.isFinite(testCount) || empty;
+  // I byggläget visas alltid den riktiga galaxen, även när den är tom.
+  showingTestData = Number.isFinite(testCount) || (empty && mode === 'utforska');
   data = showingTestData ? createTestGalaxy(Number.isFinite(testCount) ? Math.max(1, Math.min(testCount, 2000)) : 160) : store.galaxy;
 
   const notice = $('test-notice');
@@ -59,7 +49,8 @@ function show({ relayout = false } = {}) {
   if (relayout) galaxy.relayout(data);
   else galaxy.setGalaxy(data);
   renderTags();
-  renderCard(galaxy.focusId);
+  if (mode === 'utforska') renderCard(galaxy.focusId);
+  else builder.refresh();
 }
 
 // --- Taggar -------------------------------------------------------------
@@ -112,16 +103,6 @@ function renderLegendRelations() {
 
 // --- Bokkortet ----------------------------------------------------------
 
-// Ett genererat omslag med titel och författare. Riktiga omslag används
-// inte förrän det är klart att de får visas.
-function cover(book, small = false) {
-  const genre = getGenre(book.genre);
-  return el('div', { class: `cover${small ? ' cover--small' : ''}`, style: `--c:${genre.color}`, 'aria-hidden': 'true' }, [
-    el('span', { class: 'cover__title', text: book.title }),
-    small ? null : el('span', { class: 'cover__author', text: book.author }),
-  ]);
-}
-
 function renderCard(bookId) {
   const card = $('card');
   const book = bookId ? data.books.find((b) => b.id === bookId) : null;
@@ -170,7 +151,7 @@ function renderCard(bookId) {
 }
 
 function updateInset() {
-  const card = $('card');
+  const card = mode === 'bygga' ? $('builder') : $('card');
   if (card.hidden) return galaxy.setInset();
   const box = card.getBoundingClientRect();
   if (window.innerWidth > 760) galaxy.setInset({ right: window.innerWidth - box.left });
@@ -179,6 +160,10 @@ function updateInset() {
 window.addEventListener('resize', updateInset);
 
 galaxy.on('focus', (id) => {
+  if (mode === 'bygga') {
+    builder.openBook(id);
+    return;
+  }
   renderCard(id);
   document.body.classList.toggle('has-focus', Boolean(id));
   updateInset();
@@ -192,6 +177,46 @@ galaxy.on('focus', (id) => {
 galaxy.on('settled', (positions) => {
   // Testgalaxen sparas aldrig.
   if (!showingTestData) store.savePositions(positions);
+});
+
+// --- Byggläget -----------------------------------------------------------
+
+const builder = createBuilder({ root: $('builder'), store, galaxy, say, onExport: () => exportGalaxy() });
+
+function setMode(next, { announce = true } = {}) {
+  if (next === 'bygga' && Number.isFinite(testParam)) {
+    say('Byggläget fungerar inte i testgalaxen. Ta bort ?test ur adressen.');
+    return;
+  }
+  if (next === mode) return;
+  mode = next;
+  document.body.classList.toggle('mode-build', mode === 'bygga');
+  for (const button of document.querySelectorAll('[data-mode]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+  }
+  history.replaceState(null, '', mode === 'bygga' ? '#bygga' : location.pathname + location.search);
+  if (mode === 'bygga') {
+    $('card').hidden = true;
+    document.body.classList.remove('has-focus');
+    builder.show();
+  } else {
+    builder.hide();
+  }
+  show();
+  updateInset();
+  if (announce) say(mode === 'bygga' ? 'Byggläget. Sök fram en bok i formuläret.' : 'Utforskaläget.');
+}
+
+for (const button of document.querySelectorAll('[data-mode]')) {
+  button.addEventListener('click', () => setMode(button.dataset.mode));
+}
+
+// Ctrl+Z (Cmd+Z på Mac) ångrar i byggläget, utom när man skriver i ett fält.
+document.addEventListener('keydown', (event) => {
+  if (mode !== 'bygga' || event.key.toLowerCase() !== 'z' || !(event.ctrlKey || event.metaKey) || event.shiftKey) return;
+  if (event.target.closest('input, textarea, select')) return;
+  event.preventDefault();
+  builder.undo();
 });
 
 // --- Verktyg ------------------------------------------------------------
@@ -277,16 +302,21 @@ $('reset-button').addEventListener('click', async () => {
 store.subscribe(({ dirty, change }) => {
   $('reminder').hidden = !dirty;
   if (change === 'positions') return; // bara sparade positioner, inget nytt att rita
-  if (change === 'export') return;
+  if (change === 'export') {
+    if (mode === 'bygga') builder.refresh();
+    return;
+  }
   if (data) {
     show();
     renderLegendRelations();
   }
+  if (mode === 'bygga') updateInset();
 });
 warnBeforeLeaving(store);
 
 await store.load();
 $('reminder').hidden = !store.dirty;
 renderLegend();
-show();
+if (location.hash === '#bygga') setMode('bygga', { announce: false });
+else show();
 renderLegendRelations();

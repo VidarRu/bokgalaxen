@@ -13,6 +13,10 @@ import {
   untagBook,
   degreeMap,
   setPositions,
+  updateRelation,
+  renameTag,
+  removeTag,
+  findBooks,
 } from '../src/data/model.js';
 import { mergeGalaxies } from '../src/data/merge.js';
 import { createStore } from '../src/data/store.js';
@@ -169,4 +173,73 @@ test('testgalaxen är giltig, likadan varje gång och tydligt märkt', () => {
   assert.equal(n.relations.length, a.relations.length);
   assert.ok(a.relations.every((r) => r.signature === 'Testdata'));
   assert.ok(a.books.every((b) => b.title.startsWith('Testbok')));
+});
+
+test('ändra en koppling: typ, riktning och dubbletter', () => {
+  let g = createEmptyGalaxy();
+  const a = addBook(g, { title: 'A', author: 'X' });
+  const b = addBook(a.galaxy, { title: 'B', author: 'Y' });
+  g = b.galaxy;
+  const first = addRelation(g, rel(a.book.id, b.book.id, 'nasta-steg'));
+  const second = addRelation(first.galaxy, rel(a.book.id, b.book.id, 'samma-stamning'));
+  g = second.galaxy;
+
+  const turned = updateRelation(g, first.relation.id, { from: b.book.id, to: a.book.id, motivation: 'Ny text.' });
+  const r = turned.relations.find((x) => x.id === first.relation.id);
+  assert.deepEqual([r.from, r.to, r.motivation], [b.book.id, a.book.id, 'Ny text.']);
+
+  assert.throws(() => updateRelation(g, first.relation.id, { type: 'samma-stamning' }), /finns redan/);
+  assert.throws(() => updateRelation(g, first.relation.id, { motivation: '' }), /motivering/);
+  assert.throws(() => updateRelation(g, first.relation.id, { to: 'någon-annan' }), /riktningen/);
+});
+
+test('taggar: byta namn slår ihop med en tagg som redan finns, ta bort tar bort överallt', () => {
+  let g = createEmptyGalaxy();
+  const a = addBook(g, { title: 'A', author: 'X' });
+  const b = addBook(a.galaxy, { title: 'B', author: 'Y' });
+  const t1 = tagBook(b.galaxy, a.book.id, 'Norrland');
+  const t2 = tagBook(t1.galaxy, a.book.id, 'Norrlandsskildring');
+  const t3 = tagBook(t2.galaxy, b.book.id, 'Norrlandsskildring');
+  const renamed = renameTag(t3.galaxy, t2.tag.id, 'norrland');
+  assert.equal(renamed.tags.length, 1);
+  assert.equal(renamed.bookTags.length, 2, 'A hade båda taggarna, men får bara en');
+  assert.equal(renameTag(t1.galaxy, t1.tag.id, 'Norr').tags[0].name, 'Norr');
+  const removed = removeTag(t3.galaxy, t2.tag.id);
+  assert.equal(removed.bookTags.length, 1);
+});
+
+test('sökning bland böckerna i galaxen', () => {
+  let g = createEmptyGalaxy();
+  for (const [title, author, isbns] of [['Aniara', 'Harry Martinson', ['9789100398729']], ['Vägen ut', 'Harry Söderberg'], ['Doktor Glas', 'Hjalmar Söderberg']]) {
+    g = addBook(g, { title, author, isbns }).galaxy;
+  }
+  assert.deepEqual(findBooks(g, 'söderberg').map((b) => b.title), ['Doktor Glas', 'Vägen ut']);
+  assert.deepEqual(findBooks(g, 'harry ani').map((b) => b.title), ['Aniara']);
+  assert.deepEqual(findBooks(g, '91-0-039872-1').map((b) => b.title), ['Aniara']);
+  assert.deepEqual(findBooks(g, '  '), []);
+});
+
+test('ångra: går tillbaka ett steg i taget och behåller positionerna', async () => {
+  const data = new Map();
+  const storage = { getItem: (k) => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), removeItem: (k) => data.delete(k) };
+  const store = createStore({ storage, fetchImpl: async () => ({ ok: false }) });
+  await store.load();
+  assert.equal(store.undoLabel, null);
+  let id;
+  store.update((g) => {
+    const r = addBook(g, { title: 'A', author: 'X' });
+    id = r.book.id;
+    return r.galaxy;
+  }, 'boken A');
+  store.update((g) => tagBook(g, id, 'Tagg').galaxy, 'taggen Tagg');
+  store.savePositions({ [id]: { x: 5, y: 6, z: 7 } });
+  assert.equal(store.undoLabel, 'taggen Tagg');
+
+  assert.equal(store.undo(), 'taggen Tagg');
+  assert.equal(store.galaxy.tags.length, 0);
+  assert.deepEqual(store.galaxy.books[0].position, { x: 5, y: 6, z: 7 });
+  assert.equal(store.undo(), 'boken A');
+  assert.equal(store.galaxy.books.length, 0);
+  assert.equal(store.undo(), null);
+  assert.equal(store.dirty, true);
 });

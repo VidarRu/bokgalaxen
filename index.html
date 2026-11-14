@@ -42,7 +42,13 @@
 
     <aside class="card" id="card" aria-label="Vald bok" hidden></aside>
 
+    <section class="card builder" id="builder" aria-label="Byggläget" hidden></section>
+
     <nav class="toolbar" aria-label="Verktyg">
+      <div class="modes" role="group" aria-label="Läge">
+        <button type="button" class="modes__button" data-mode="utforska" aria-pressed="true">Utforska</button>
+        <button type="button" class="modes__button" data-mode="bygga" aria-pressed="false">Bygga</button>
+      </div>
       <button type="button" class="button" id="overview-button">Hela galaxen</button>
       <div class="menu">
         <button type="button" class="button" id="file-button" aria-haspopup="true" aria-expanded="false" aria-controls="file-menu">Galaxfil</button>
