@@ -33,6 +33,8 @@ export function groupEditions(editions) {
     b.librisIds = [...new Set([...b.librisIds, ...edition.librisIds])];
     b.librisWorkIds = [...new Set([...b.librisWorkIds, ...edition.librisWorkIds])];
     b.subjects = [...new Set([...b.subjects, ...edition.subjects])];
+    b.languages = [...new Set([...(b.languages ?? []), ...(edition.languages ?? [])])];
+    b.originalTitles = [...new Set([...(b.originalTitles ?? []), ...(edition.originalTitles ?? [])])];
     b.genreHints = [...new Set([...b.genreHints, ...edition.genreHints])];
     b.suggestedGenre = b.suggestedGenre ?? edition.suggestedGenre;
     b.year = b.year && edition.year ? Math.min(b.year, edition.year) : b.year ?? edition.year;
@@ -58,16 +60,23 @@ async function withTimeout(run, signal) {
 // librisIds, librisWorkIds, subjects, genreHints, suggestedGenre, cover
 // och editions (antal utgåvor som slogs ihop).
 // Kastar fel om varken XL eller Xsearch svarar.
-export async function searchBooks(query, { signal, fetchImpl } = {}) {
+//
+// Med language (till exempel 'swe') visas bara utgåvor på det språket, och
+// med familyName bara utgåvor där någon med det efternamnet medverkar. Det
+// klarar bara XL, så då provas inte Xsearch. limit och offset styr hur många
+// utgåvor som hämtas och varifrån, för den som behöver bläddra.
+export async function searchBooks(query, { signal, fetchImpl, language, familyName, limit, offset } = {}) {
   const q = String(query ?? '').trim();
   if (!q) return { books: [], source: null };
   const options = fetchImpl ? { fetchImpl } : {};
+  const xlOptions = { ...options, language, familyName, ...(limit ? { limit } : {}), ...(offset ? { offset } : {}) };
 
   try {
-    const editions = await withTimeout((s) => searchXl(q, { ...options, signal: s }), signal);
+    const editions = await withTimeout((s) => searchXl(q, { ...xlOptions, signal: s }), signal);
     return { books: groupEditions(editions), source: 'xl' };
   } catch (error) {
     if (signal?.aborted) throw error;
+    if (language || familyName) throw new Error('Libris XL svarar inte just nu. Försök igen om en stund.');
   }
   try {
     const editions = await withTimeout((s) => searchXsearch(q, { ...options, signal: s }), signal);

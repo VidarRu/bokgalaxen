@@ -573,6 +573,14 @@ button {
   font-size: 14px;
 }
 
+/* En länk som ser ut som en knapp, till exempel "Begär att bli redaktör". */
+a.button {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink);
+  text-decoration: none;
+}
+
 .button:hover {
   border-color: rgba(255, 217, 160, 0.6);
 }
@@ -734,6 +742,41 @@ button {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--gold);
+}
+
+/* Vem som är inloggad, med länkar till kontot och (för administratören) redaktörerna. */
+.builder__account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.builder__account .builder__meta {
+  margin: 0;
+}
+
+.builder__account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.field--check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.field--check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--gold);
 }
 
 .builder__reminder {

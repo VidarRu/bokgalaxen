@@ -182,7 +182,7 @@ Det riskablaste görs först. Fable används bara i steget där det visuella avg
 - [ ] **Omslag.** Open Library saknar svenska omslag. Libris XL har bilder för en del utgåvor, men det är inte klart om de får visas. Tills dess används genererade omslag.
 - [ ] **Typer av kopplingar.** Är listan ovan rätt? Ska bibliotekarier kunna skapa egna typer?
 - [ ] **Länk till katalogen.** Vilken katalog ska länken gå till i demon, Västerviks? Hur blir det när flera bibliotek bygger i samma galax?
-- [ ] **Vem får bygga i prototypen?** Alla med länken, eller ett enkelt lösenordsskydd som på workshopsidorna?
+- [x] **Vem får bygga i prototypen?** Avgjort 2026-11-15: redaktörer med eget konto (användarnamn och lösenord) som administratören skapar. Var och en ser och ändrar sina egna boktips. Se `docs/VERCEL.md`.
 - [ ] **Namn.** Ska prototypen heta *Bokgalaxen*?
 
 ## Förslag på kort CLAUDE.md

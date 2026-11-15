@@ -8,6 +8,11 @@
 //   bok        en bok i galaxen: genre, taggar, kopplingar
 //   koppla     sök fram den andra boken i en koppling
 //   koppling   typ, riktning, motivering och signatur (ny eller ändrad)
+//   konto      signatur och lösenord för den inloggade
+//   redaktorer administratören skapar och tar bort konton
+//
+// När galaxen delas via servern (store.shared) måste man logga in. En
+// redaktör ser och ändrar bara sina egna boktips. Administratören ser allt.
 //
 // Alla ändringar går genom store.update(), så att de sparas, kan ångras och
 // ritas om i galaxen.
@@ -33,6 +38,9 @@ import {
 import { GENRES, getGenre } from '../data/genres.js';
 import { relationColor } from '../galaxy/theme.js';
 import { el, cover } from '../ui/dom.js';
+import { remoteApi } from '../data/remote.js';
+import { passwordProblems, describePasswordProblems, PASSWORD_MIN } from '../data/password.js';
+import { redaktorMailto } from '../config.js';
 
 const SIGNATURE_KEY = 'bokgalaxen.signatur';
 const MOTIVATION_MAX = 400;
@@ -75,6 +83,15 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
 
   const g = () => store.galaxy;
   const bookById = (id) => g().books.find((b) => b.id === id) ?? null;
+
+  // Vem får göra vad. Utan delad galax (bara webbläsaren) får man allt.
+  const shared = () => store.shared;
+  const me = () => store.user;
+  const isAdmin = () => !shared() || Boolean(me()?.isAdmin);
+  const ownsRelation = (r) => isAdmin() || r.owner === me()?.id;
+  const canSetGenre = (book) => isAdmin() || book.addedBy === me()?.id;
+  const canRemoveBook = (book) =>
+    isAdmin() || (book.addedBy === me()?.id && g().relations.every((r) => (r.from !== book.id && r.to !== book.id) || r.owner === me()?.id));
 
   // --- Ändringar --------------------------------------------------------
 
@@ -264,7 +281,7 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
 
   function tagAdmin() {
     const tags = [...g().tags].sort((a, b) => a.name.localeCompare(b.name, 'sv'));
-    if (!tags.length) return null;
+    if (!tags.length || !isAdmin()) return null;
     const counts = new Map();
     for (const bt of g().bookTags) counts.set(bt.tag, (counts.get(bt.tag) ?? 0) + 1);
     return el('details', { class: 'builder__more' }, [
@@ -359,9 +376,18 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
       view = { name: 'start' };
       return startView();
     }
-    const relations = relationsForBook(g(), book.id);
+    // En redaktör ser bara sina egna boktips här. Alla syns i utforskaläget.
+    const all = relationsForBook(g(), book.id);
+    const relations = all.filter(({ relation }) => ownsRelation(relation));
+    const othersCount = all.length - relations.length;
+    const own = shared() && !isAdmin();
     const tags = tagsForBook(g(), book.id);
     const select = genreSelect('book-genre', book.genre);
+    const genreLocked = !canSetGenre(book);
+    if (genreLocked) {
+      select.disabled = true;
+      select.setAttribute('aria-describedby', 'book-genre-hint');
+    }
     select.addEventListener('change', () => {
       const name = getGenre(select.value || null).name;
       if (change(`ändrade genren för ${book.title}`, (galax) => updateBook(galax, book.id, { genre: select.value || null }))) say(`Genren för ${book.title} är nu ${name}.`);
@@ -393,10 +419,23 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
         ]),
       ]),
 
-      el('div', { class: 'field' }, [el('label', { class: 'field__label', for: 'book-genre', text: 'Genre (styr stjärnans färg)' }), select]),
+      el('div', { class: 'field' }, [
+        el('label', { class: 'field__label', for: 'book-genre', text: 'Genre (styr stjärnans färg)' }),
+        select,
+        genreLocked ? el('p', { class: 'field__hint', id: 'book-genre-hint', text: 'Bara den som lade till boken, eller administratören, kan byta genre.' }) : null,
+      ]),
 
       el('section', { class: 'builder__section', 'aria-labelledby': 'book-relations' }, [
-        el('h4', { class: 'builder__subheading', id: 'book-relations', text: relations.length ? `Kopplingar (${relations.length})` : 'Inga kopplingar än' }),
+        el('h4', {
+          class: 'builder__subheading',
+          id: 'book-relations',
+          text: own
+            ? relations.length ? `Dina boktips (${relations.length})` : 'Du har inga boktips för boken än'
+            : relations.length ? `Kopplingar (${relations.length})` : 'Inga kopplingar än',
+        }),
+        own && othersCount
+          ? el('p', { class: 'builder__meta', text: `Boken har ${othersCount === 1 ? 'ett boktips' : `${othersCount} boktips`} från andra redaktörer. De syns i utforskaläget.` })
+          : null,
         relations.length
           ? el('ul', { class: 'edit-list' }, relations.map(({ relation, other, type, label }) =>
               el('li', { class: 'edit-item' }, [
@@ -421,7 +460,9 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
                 ]),
               ]),
             ))
-          : el('p', { class: 'builder__meta', text: 'Utan kopplingar betyder bokens plats i galaxen ingenting.' }),
+          : own
+            ? null
+            : el('p', { class: 'builder__meta', text: 'Utan kopplingar betyder bokens plats i galaxen ingenting.' }),
         el('button', { type: 'button', class: 'button button--primary builder__wide', text: 'Koppla ihop med en annan bok', onclick: () => {
           search = { query: '', local: [], libris: [], state: 'idle', error: '', source: null };
           go({ name: 'koppla', fromId: book.id });
@@ -455,7 +496,7 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
         el('p', { class: 'field__hint', text: 'Skriv en ny tagg eller välj en som redan finns.' }),
       ]),
 
-      el('div', { class: 'builder__danger' }, [
+      !canRemoveBook(book) ? null : el('div', { class: 'builder__danger' }, [
         el('button', {
           type: 'button',
           class: 'button button--danger',
@@ -495,7 +536,7 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
 
   function relationView() {
     const existing = view.relationId ? g().relations.find((r) => r.id === view.relationId) : null;
-    if (view.relationId && !existing) {
+    if ((view.relationId && !existing) || (existing && !ownsRelation(existing))) {
       view = { name: 'start' };
       return startView();
     }
@@ -504,7 +545,7 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
     view.toId ??= existing?.to;
     view.type ??= existing?.type ?? g().relationTypes[0]?.id;
     view.motivation ??= existing?.motivation ?? '';
-    view.signature ??= existing?.signature ?? rememberedSignature();
+    view.signature ??= existing?.signature ?? (me()?.signature || rememberedSignature());
     view.returnTo ??= view.fromId; // boken man kom från, även om riktningen byts
     const from = bookById(view.fromId);
     const to = bookById(view.toId);
@@ -610,6 +651,8 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
         if (!text) return showError('Skriv en motivering: varför ska den som har läst den ena boken läsa den andra?', motivation);
         if (!sign) return showError('Skriv din signatur: förnamn och bibliotek.', signature);
         rememberSignature(sign);
+        // Första gången sparas signaturen på kontot, så att den följer med.
+        if (shared() && me() && !me().signature) store.setSignature(sign).catch(() => {});
         const pair = `${from.title} – ${to.title}`;
         if (existing) {
           try {
@@ -644,7 +687,9 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
       el('div', { class: 'field' }, [
         el('label', { class: 'field__label', for: 'signature', text: 'Signatur' }),
         signature,
-        el('p', { class: 'field__hint', id: 'signature-hint', text: 'Förnamn och bibliotek, till exempel ”Vidar, Västerviks bibliotek”. Signaturen syns för alla som ser galaxen. Den här webbläsaren minns den åt dig.' }),
+        el('p', { class: 'field__hint', id: 'signature-hint', text: shared()
+          ? 'Förnamn och bibliotek, till exempel ”Vidar, Västerviks bibliotek”. Signaturen syns för alla som ser galaxen. Den sparas på ditt konto.'
+          : 'Förnamn och bibliotek, till exempel ”Vidar, Västerviks bibliotek”. Signaturen syns för alla som ser galaxen. Den här webbläsaren minns den åt dig.' }),
       ]),
       errors,
       el('div', { class: 'builder__actions' }, [
@@ -665,16 +710,310 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
     ];
   }
 
+  // --- Lösenordsfält ----------------------------------------------------
+
+  function rulesText(value) {
+    if (!value) return `Minst ${PASSWORD_MIN} tecken, med stor och liten bokstav, en siffra och ett specialtecken.`;
+    const problems = passwordProblems(value);
+    return problems.length ? describePasswordProblems(problems) : 'Lösenordet uppfyller kraven.';
+  }
+
+  function passwordField(id, label, { autocomplete = 'new-password', rules = true } = {}) {
+    const input = el('input', {
+      type: 'password',
+      id,
+      class: 'field__input',
+      autocomplete,
+      required: true,
+      'aria-describedby': rules ? `${id}-rules` : null,
+    });
+    const hint = rules ? el('p', { class: 'field__hint', id: `${id}-rules`, text: rulesText('') }) : null;
+    if (hint) input.addEventListener('input', () => { hint.textContent = rulesText(input.value); });
+    return { input, node: el('div', { class: 'field' }, [el('label', { class: 'field__label', for: id, text: label }), input, hint]) };
+  }
+
+  function errorBox(id) {
+    const box = el('div', { class: 'form-error', id, role: 'alert' });
+    box.show = (message, field) => {
+      box.replaceChildren(el('p', { text: message }));
+      field?.setAttribute('aria-invalid', 'true');
+      field?.focus();
+    };
+    box.clear = () => box.replaceChildren();
+    return box;
+  }
+
+  // Kör en knapp medan servern svarar: knappen går inte att trycka två gånger.
+  async function busy(button, text, run) {
+    const before = button.textContent;
+    button.disabled = true;
+    button.textContent = text;
+    try {
+      return await run();
+    } finally {
+      button.disabled = false;
+      button.textContent = before;
+    }
+  }
+
+  // --- Vy: logga in -----------------------------------------------------
+
+  function loginView() {
+    const username = el('input', { id: 'login-user', class: 'field__input', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', required: true });
+    const password = passwordField('login-pass', 'Lösenord', { autocomplete: 'current-password', rules: false });
+    const errors = errorBox('login-error');
+    const submit = el('button', { type: 'submit', class: 'button button--primary', text: 'Logga in' });
+    const form = el('form', {
+      class: 'builder__form',
+      novalidate: true,
+      onsubmit: async (event) => {
+        event.preventDefault();
+        errors.clear();
+        if (!username.value.trim()) return errors.show('Skriv ditt användarnamn.', username);
+        if (!password.input.value) return errors.show('Skriv ditt lösenord.', password.input);
+        try {
+          await busy(submit, 'Loggar in …', () => store.login(username.value, password.input.value));
+        } catch (error) {
+          password.input.value = '';
+          return errors.show(error.message, password.input);
+        }
+        say(`Du är inloggad som ${me().username}.`);
+        go({ name: galaxy.focusId ? 'bok' : 'start', bookId: galaxy.focusId });
+      },
+    }, [
+      el('div', { class: 'field' }, [el('label', { class: 'field__label', for: 'login-user', text: 'Användarnamn' }), username]),
+      password.node,
+      errors,
+      el('div', { class: 'builder__actions' }, [submit]),
+    ]);
+    return [
+      heading('Logga in för att bygga'),
+      el('p', { class: 'builder__lead', text: 'Byggläget är för redaktörer, bibliotekarier som skriver boktips. Här lägger du till och ändrar dina egna boktips. Allas boktips syns i utforskaläget.' }),
+      form,
+      el('section', { class: 'builder__section', 'aria-labelledby': 'become-editor' }, [
+        el('h4', { class: 'builder__subheading', id: 'become-editor', text: 'Vill du bli redaktör?' }),
+        el('p', { class: 'builder__meta', text: 'Skicka en förfrågan med e-post. Du får ett användarnamn och ett lösenord tillbaka.' }),
+        el('a', { class: 'button', href: redaktorMailto(), text: 'Begär att bli redaktör' }),
+      ]),
+    ];
+  }
+
+  // --- Vy: ditt konto ---------------------------------------------------
+
+  function accountView() {
+    const signature = el('input', { id: 'account-signature', class: 'field__input', maxlength: '80', value: me().signature ?? '', 'aria-describedby': 'account-signature-hint' });
+    const signErrors = errorBox('account-signature-error');
+    const signSubmit = el('button', { type: 'submit', class: 'button', text: 'Spara signaturen' });
+    const signForm = el('form', {
+      class: 'builder__form',
+      onsubmit: async (event) => {
+        event.preventDefault();
+        signErrors.clear();
+        try {
+          await busy(signSubmit, 'Sparar …', () => store.setSignature(signature.value));
+          say('Signaturen är sparad. Den fylls i när du skriver nya boktips.');
+        } catch (error) {
+          signErrors.show(error.message, signature);
+        }
+      },
+    }, [
+      el('div', { class: 'field' }, [
+        el('label', { class: 'field__label', for: 'account-signature', text: 'Signatur' }),
+        signature,
+        el('p', { class: 'field__hint', id: 'account-signature-hint', text: 'Förnamn och bibliotek, till exempel ”Vidar, Västerviks bibliotek”. Boktips som du redan har skrivit ändras inte.' }),
+      ]),
+      signErrors,
+      el('div', { class: 'builder__actions' }, [signSubmit]),
+    ]);
+
+    const current = passwordField('account-current', 'Nuvarande lösenord', { autocomplete: 'current-password', rules: false });
+    const next = passwordField('account-new', 'Nytt lösenord');
+    const pwErrors = errorBox('account-password-error');
+    const pwSubmit = el('button', { type: 'submit', class: 'button', text: 'Byt lösenord' });
+    const pwForm = el('form', {
+      class: 'builder__form',
+      novalidate: true,
+      onsubmit: async (event) => {
+        event.preventDefault();
+        pwErrors.clear();
+        if (!current.input.value) return pwErrors.show('Skriv ditt nuvarande lösenord.', current.input);
+        const problems = passwordProblems(next.input.value);
+        if (problems.length) return pwErrors.show(describePasswordProblems(problems), next.input);
+        try {
+          await busy(pwSubmit, 'Byter …', () => store.changePassword(current.input.value, next.input.value));
+        } catch (error) {
+          return pwErrors.show(error.message, current.input);
+        }
+        current.input.value = '';
+        next.input.value = '';
+        say('Lösenordet är bytt. Du är utloggad på andra datorer.');
+      },
+    }, [current.node, next.node, pwErrors, el('div', { class: 'builder__actions' }, [pwSubmit])]);
+
+    return [
+      backButton('Tillbaka', () => go({ name: 'start' })),
+      heading('Ditt konto'),
+      el('p', { class: 'builder__lead', text: `Du är inloggad som ${me().username}${me().isAdmin ? ', administratör' : ''}.` }),
+      el('section', { class: 'builder__section', 'aria-labelledby': 'account-sign' }, [el('h4', { class: 'builder__subheading', id: 'account-sign', text: 'Signatur' }), signForm]),
+      el('section', { class: 'builder__section', 'aria-labelledby': 'account-pw' }, [el('h4', { class: 'builder__subheading', id: 'account-pw', text: 'Lösenord' }), pwForm]),
+    ];
+  }
+
+  // --- Vy: redaktörer (bara administratören) --------------------------
+
+  function loadUsers() {
+    view.loading = true;
+    remoteApi.listUsers().then(
+      ({ users }) => {
+        if (view.name !== 'redaktorer') return;
+        Object.assign(view, { users, loading: false, error: '' });
+        render({ focus: false });
+      },
+      (error) => {
+        if (view.name !== 'redaktorer') return;
+        Object.assign(view, { loading: false, error: error.message });
+        render({ focus: false });
+      },
+    );
+  }
+
+  function userItem(user) {
+    const self = user.id === me().id;
+    const resetting = view.resetFor === user.id;
+    const reset = resetting ? passwordField(`reset-${user.id}`, `Nytt lösenord för ${user.username}`) : null;
+    const resetErrors = errorBox(`reset-error-${user.id}`);
+    const resetSubmit = el('button', { type: 'submit', class: 'button button--small button--primary', text: 'Spara lösenordet' });
+    return el('li', { class: 'edit-item' }, [
+      el('p', { class: 'edit-item__title', text: user.username }),
+      el('p', { class: 'builder__meta', text: [user.isAdmin ? 'Administratör' : 'Redaktör', user.signature ? `signerar ”${user.signature}”` : null, self ? 'det är du' : null].filter(Boolean).join(' · ') }),
+      resetting
+        ? el('form', {
+            class: 'builder__form',
+            novalidate: true,
+            onsubmit: async (event) => {
+              event.preventDefault();
+              const problems = passwordProblems(reset.input.value);
+              if (problems.length) return resetErrors.show(describePasswordProblems(problems), reset.input);
+              try {
+                await busy(resetSubmit, 'Sparar …', () => remoteApi.updateUser({ id: user.id, password: reset.input.value }));
+              } catch (error) {
+                return resetErrors.show(error.message, reset.input);
+              }
+              view.resetFor = null;
+              render({ focus: false });
+              say(`${user.username} har fått ett nytt lösenord. Skicka det till redaktören.`);
+            },
+          }, [
+            reset.node,
+            resetErrors,
+            el('div', { class: 'edit-item__actions' }, [
+              resetSubmit,
+              el('button', { type: 'button', class: 'button button--small', text: 'Avbryt', onclick: () => { view.resetFor = null; render({ focus: false }); } }),
+            ]),
+          ])
+        : el('div', { class: 'edit-item__actions' }, [
+            el('button', {
+              type: 'button',
+              class: 'button button--small',
+              'aria-label': `Nytt lösenord för ${user.username}`,
+              text: 'Nytt lösenord',
+              onclick: () => {
+                view.resetFor = user.id;
+                render({ focus: false });
+                root.querySelector(`#reset-${CSS.escape(user.id)}`)?.focus();
+              },
+            }),
+            self ? null : el('button', {
+              type: 'button',
+              class: 'button button--small button--danger',
+              'aria-label': `Ta bort kontot ${user.username}`,
+              text: 'Ta bort',
+              onclick: async () => {
+                if (!confirm(`Kontot ${user.username} tas bort. Boktipsen som ${user.username} har skrivit finns kvar, men bara du kan ändra dem. Vill du fortsätta?`)) return;
+                try {
+                  await remoteApi.deleteUser(user.id);
+                } catch (error) {
+                  return say(error.message);
+                }
+                view.users = view.users.filter((u) => u.id !== user.id);
+                render({ focus: false });
+                root.querySelector('.builder__heading')?.focus();
+                say(`Kontot ${user.username} är borttaget.`);
+              },
+            }),
+          ]),
+    ]);
+  }
+
+  function editorsView() {
+    if (!me()?.isAdmin) {
+      view = { name: 'start' };
+      return startView();
+    }
+    if (!view.users && !view.loading && !view.error) loadUsers();
+
+    const username = el('input', { id: 'new-user', class: 'field__input', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', required: true, 'aria-describedby': 'new-user-hint' });
+    const password = passwordField('new-user-pass', 'Lösenord');
+    const admin = el('input', { type: 'checkbox', id: 'new-user-admin' });
+    const errors = errorBox('new-user-error');
+    const submit = el('button', { type: 'submit', class: 'button button--primary', text: 'Skapa kontot' });
+    const form = el('form', {
+      class: 'builder__form',
+      novalidate: true,
+      onsubmit: async (event) => {
+        event.preventDefault();
+        errors.clear();
+        if (!username.value.trim()) return errors.show('Skriv ett användarnamn.', username);
+        const problems = passwordProblems(password.input.value);
+        if (problems.length) return errors.show(describePasswordProblems(problems), password.input);
+        let created;
+        try {
+          created = await busy(submit, 'Skapar …', () => remoteApi.createUser({ username: username.value, password: password.input.value, isAdmin: admin.checked }));
+        } catch (error) {
+          return errors.show(error.message, username);
+        }
+        view.users = [...(view.users ?? []), created.user].sort((a, b) => a.username.localeCompare(b.username, 'sv'));
+        render({ focus: false });
+        root.querySelector('#new-user')?.focus();
+        say(`Kontot ${created.user.username} är skapat. Skicka användarnamnet och lösenordet till redaktören.`);
+      },
+    }, [
+      el('div', { class: 'field' }, [
+        el('label', { class: 'field__label', for: 'new-user', text: 'Användarnamn' }),
+        username,
+        el('p', { class: 'field__hint', id: 'new-user-hint', text: 'Bokstäver, siffror, punkt och bindestreck, till exempel anna.svensson.' }),
+      ]),
+      password.node,
+      el('div', { class: 'field field--check' }, [admin, el('label', { for: 'new-user-admin', text: 'Administratör (kan se och ändra allt, och skapa konton)' })]),
+      errors,
+      el('div', { class: 'builder__actions' }, [submit]),
+    ]);
+
+    return [
+      backButton('Tillbaka', () => go({ name: 'start' })),
+      heading('Redaktörer'),
+      el('p', { class: 'builder__lead', text: 'Skapa ett konto när någon har bett om att bli redaktör. Lösenordet visas inte igen, så skicka det till redaktören direkt.' }),
+      el('section', { class: 'builder__section', 'aria-labelledby': 'users-new' }, [el('h4', { class: 'builder__subheading', id: 'users-new', text: 'Nytt konto' }), form]),
+      el('section', { class: 'builder__section', 'aria-labelledby': 'users-list' }, [
+        el('h4', { class: 'builder__subheading', id: 'users-list', text: view.users ? `Konton (${view.users.length})` : 'Konton' }),
+        view.error ? el('p', { class: 'results__status results__status--error', text: view.error }) : null,
+        !view.users && !view.error ? el('p', { class: 'builder__meta', role: 'status', text: 'Hämtar kontona …' }) : null,
+        view.users ? el('ul', { class: 'edit-list' }, view.users.map(userItem)) : null,
+      ]),
+    ];
+  }
+
   // --- Ritning ----------------------------------------------------------
 
   function render({ focus = true } = {}) {
     if (root.hidden) return;
-    const views = { start: startView, 'ny-bok': newBookView, bok: bookView, koppla: pickView, koppling: relationView };
-    const content = (views[view.name] ?? startView)();
+    const views = { start: startView, 'ny-bok': newBookView, bok: bookView, koppla: pickView, koppling: relationView, konto: accountView, redaktorer: editorsView };
+    const loggedOut = shared() && !me();
+    const content = loggedOut ? loginView() : (views[view.name] ?? startView)();
     const label = store.undoLabel;
     const top = el('div', { class: 'builder__top' }, [
       el('h2', { class: 'builder__mode', text: 'Byggläget' }),
-      el('button', {
+      loggedOut ? null : el('button', {
         type: 'button',
         class: 'button button--small',
         disabled: !label,
@@ -683,16 +1022,35 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
         onclick: undo,
       }),
     ]);
-    const viewKey = `${view.name}|${view.bookId ?? view.fromId ?? view.relationId ?? ''}`;
+    const account = shared() && me()
+      ? el('div', { class: 'builder__account' }, [
+          el('p', { class: 'builder__meta', text: `Inloggad som ${me().username}${me().isAdmin ? ' (administratör)' : ''}` }),
+          el('div', { class: 'builder__account-actions' }, [
+            el('button', { type: 'button', class: 'link-button', text: 'Ditt konto', onclick: () => go({ name: 'konto' }) }),
+            me().isAdmin ? el('button', { type: 'button', class: 'link-button', text: 'Redaktörer', onclick: () => go({ name: 'redaktorer' }) }) : null,
+            el('button', {
+              type: 'button',
+              class: 'link-button',
+              text: 'Logga ut',
+              onclick: async () => {
+                await store.logout();
+                say('Du är utloggad.');
+                go({ name: 'start' });
+              },
+            }),
+          ]),
+        ])
+      : null;
+    const viewKey = `${loggedOut ? 'login' : view.name}|${view.bookId ?? view.fromId ?? view.relationId ?? ''}`;
     const scroll = root.scrollTop;
-    const reminder = store.dirty
+    const reminder = store.dirty && !shared()
       ? el('div', { class: 'builder__reminder' }, [
           el('p', { text: 'Ändringarna finns bara i den här webbläsaren.' }),
           el('button', { type: 'button', class: 'button button--small button--primary', text: 'Exportera', onclick: onExport }),
         ])
       : null;
-    const last = label ? el('p', { class: 'builder__undo', id: 'builder-last', text: `Senaste ändringen: ${label}.` }) : null;
-    root.replaceChildren(...[top, reminder, last, ...[].concat(content)].filter(Boolean));
+    const last = label && !loggedOut ? el('p', { class: 'builder__undo', id: 'builder-last', text: `Senaste ändringen: ${label}.` }) : null;
+    root.replaceChildren(...[top, account, reminder, last, ...[].concat(content)].filter(Boolean));
     if (focus) {
       root.scrollTop = 0;
       root.querySelector('.builder__heading')?.focus();
@@ -706,7 +1064,7 @@ export function createBuilder({ root, store, galaxy, say, onExport }) {
     // Böcker eller kopplingar som vyn visade kan vara borta nu.
     render({ focus: false });
     const button = root.querySelector('.builder__top button');
-    if (!button.disabled) button.focus();
+    if (button && !button.disabled) button.focus();
     else root.querySelector('.builder__heading')?.focus();
   }
 

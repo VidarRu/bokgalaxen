@@ -61,6 +61,14 @@ export function parseXlItem(item) {
     .map((c) => String(c.code));
   const audience = asList(work.intendedAudience).map(label).filter(Boolean);
   const subjects = asList(work.subject).map(label).filter((s) => s && !String(s).startsWith('http'));
+  const languages = asList(work.language).map((l) => idFromUri(l?.['@id'] ?? l?.code)).filter(Boolean);
+  // En översättning har originalets titel i translationOf. Den behövs för att
+  // hitta den svenska utgåvan av en bok som man bara känner till på engelska.
+  const originalTitles = asList(work.translationOf)
+    .flatMap((t) => asList(t?.hasTitle))
+    .map((t) => t?.mainTitle)
+    .filter(Boolean)
+    .map((t) => String(t).replace(/[\s.]+$/, '').trim());
 
   return {
     title: String(title).trim(),
@@ -70,6 +78,8 @@ export function parseXlItem(item) {
     librisIds: [idFromUri(item['@id'])].filter(Boolean),
     librisWorkIds: [idFromUri(work['@id'])].filter(Boolean),
     subjects: [...new Set(subjects)],
+    languages: [...new Set(languages)],
+    originalTitles: [...new Set(originalTitles)],
     genreHints: [...new Set(genreForms)],
     suggestedGenre: suggestGenre({ genreForms, sab, audience }),
     cover: null, // Libris har omslagsbilder, men rättigheterna är inte klarlagda. Se PROGRESS.md.
@@ -78,8 +88,14 @@ export function parseXlItem(item) {
   };
 }
 
-export async function searchXl(query, { limit = 12, signal, fetchImpl = fetch } = {}) {
+// language är en språkkod från id.kb.se, till exempel 'swe'. Då visas bara
+// utgåvor på det språket. familyName visar bara utgåvor där någon med det
+// efternamnet har medverkat (författare, men också översättare).
+export async function searchXl(query, { limit = 12, offset = 0, language, familyName, signal, fetchImpl = fetch } = {}) {
   const params = new URLSearchParams({ q: query, '@type': 'Instance', _limit: String(limit) });
+  if (offset) params.set('_offset', String(offset));
+  if (language) params.set('instanceOf.language.@id', `https://id.kb.se/language/${language}`);
+  if (familyName) params.set('instanceOf.contribution.agent.familyName', familyName);
   const response = await fetchImpl(`${ENDPOINT}?${params}`, {
     signal,
     headers: { Accept: 'application/ld+json' },

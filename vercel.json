@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "api/galaxy.js": { "includeFiles": "public/startgalax.json" }
+  }
+}

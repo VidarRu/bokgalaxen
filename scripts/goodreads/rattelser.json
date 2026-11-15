@@ -1,0 +1,243 @@
+{
+  "_om": "Rättelser för hand. Nyckeln är bokens id på Goodreads. title och author är den svenska titeln och författarnamnet som Libris använder. Libris måste ändå hitta boken, annars räknas den som saknad. skip: true hoppar över boken. genre rättar bokens genre (id från src/data/genres.js).",
+  "2429135": {
+    "title": "Män som hatar kvinnor"
+  },
+  "4981": {
+    "title": "Slakthus 5",
+    "author": "Kurt Vonnegut"
+  },
+  "10959": {
+    "title": "Sofies värld"
+  },
+  "485894": {
+    "title": "Förvandlingen"
+  },
+  "18144590": {
+    "title": "Alkemisten"
+  },
+  "28862": {
+    "title": "Fursten"
+  },
+  "10534": {
+    "title": "Krigskonsten",
+    "author": "Sunzi",
+    "genre": "fakta"
+  },
+  "1381": {
+    "title": "Odysséen",
+    "author": "Homeros"
+  },
+  "77265004": {
+    "title": "Iliaden",
+    "author": "Homeros"
+  },
+  "480204": {
+    "title": "Fantomen på Operan"
+  },
+  "10916717": {
+    "title": "De tre musketörerna"
+  },
+  "33507": {
+    "title": "En världsomsegling under havet"
+  },
+  "331256": {
+    "title": "Picknick vid vägkanten",
+    "author": "Arkadij Strugatskij"
+  },
+  "17274667": {
+    "title": "Metro 2033",
+    "author": "Dmitrij Gluchovskij"
+  },
+  "20518872": {
+    "title": "Trekropparsproblemet"
+  },
+  "23168817": {
+    "title": "Den mörka skogen"
+  },
+  "34497": {
+    "title": "Magins färg"
+  },
+  "33": {
+    "title": "Sagan om ringen"
+  },
+  "61215351": {
+    "title": "Sagan om ringen"
+  },
+  "61215372": {
+    "title": "Sagan om de två tornen"
+  },
+  "40603587": {
+    "title": "Den sista önskan"
+  },
+  "25454056": {
+    "title": "Ödets svärd"
+  },
+  "6043781": {
+    "title": "Alvernas blod"
+  },
+  "14781491": {
+    "title": "Föraktets tid"
+  },
+  "18656031": {
+    "title": "Eldens dop"
+  },
+  "18247597": {
+    "title": "Svalans torn"
+  },
+  "15196": {
+    "title": "Maus"
+  },
+  "15197": {
+    "title": "Maus"
+  },
+  "15195": {
+    "title": "Maus"
+  },
+  "9516": {
+    "title": "Persepolis"
+  },
+  "991197": {
+    "title": "Persepolis"
+  },
+  "5805": {
+    "title": "V som i Vendetta"
+  },
+  "18981933": {
+    "skip": true,
+    "_varför": "Häfte 1 av V for Vendetta, som redan finns med."
+  },
+  "13625984": {
+    "skip": true,
+    "_varför": "Spansk utgåva av V for Vendetta, som redan finns med."
+  },
+  "88514": {
+    "title": "Plattform"
+  },
+  "77507": {
+    "title": "Röd Mars"
+  },
+  "77505": {
+    "title": "Grön Mars"
+  },
+  "77504": {
+    "title": "Blå Mars"
+  },
+  "8855321": {
+    "title": "Leviathan vaknar"
+  },
+  "61240297": {
+    "title": "Snow crash",
+    "genre": "fantastik"
+  },
+  "17255666": {
+    "skip": true,
+    "_varför": "Polsk utgåva av Sandman, vol. 1, som redan finns med."
+  },
+  "23002051": {
+    "skip": true,
+    "_varför": "Enstaka häfte av Locke & Key, vol. 1, som redan finns med."
+  },
+  "198139959": {
+    "genre": "serier"
+  },
+  "34524": {
+    "genre": "barn-unga"
+  },
+  "7967": {
+    "genre": "fantastik"
+  },
+  "25099": {
+    "genre": "serier"
+  },
+  "25100": {
+    "genre": "serier"
+  },
+  "56430767": {
+    "genre": "fakta"
+  },
+  "1268479": {
+    "genre": "fantastik"
+  },
+  "13055592": {
+    "genre": "fantastik"
+  },
+  "9532": {
+    "genre": "fantastik"
+  },
+  "827": {
+    "genre": "fantastik"
+  },
+  "581125": {
+    "genre": "fantastik"
+  },
+  "12183815": {
+    "genre": "fantastik"
+  },
+  "7779059": {
+    "genre": "fantastik"
+  },
+  "44496606": {
+    "genre": "serier"
+  },
+  "25106": {
+    "genre": "serier"
+  },
+  "16164271": {
+    "genre": "serier"
+  },
+  "13490570": {
+    "genre": "serier"
+  },
+  "9674335": {
+    "genre": "serier"
+  },
+  "25105": {
+    "genre": "serier"
+  },
+  "18310944": {
+    "genre": "serier"
+  },
+  "18652490": {
+    "genre": "serier"
+  },
+  "3217221": {
+    "genre": "serier"
+  },
+  "23754": {
+    "genre": "serier"
+  },
+  "25102": {
+    "genre": "serier"
+  },
+  "25103": {
+    "genre": "serier"
+  },
+  "47720": {
+    "genre": "serier"
+  },
+  "71252": {
+    "genre": "serier"
+  },
+  "16791": {
+    "genre": "serier"
+  },
+  "7202841": {
+    "genre": "serier"
+  },
+  "25101": {
+    "genre": "serier"
+  },
+  "25104": {
+    "genre": "serier"
+  },
+  "61268765": {
+    "genre": "serier"
+  },
+  "1714747": {
+    "genre": "roman"
+  },
+  "12791521": {
+    "genre": "serier"
+  }
+}

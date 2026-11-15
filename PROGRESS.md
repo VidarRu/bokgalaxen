@@ -1,6 +1,6 @@
 # Var projektet står
 
-Senast uppdaterad 2026-11-14.
+Senast uppdaterad 2026-11-15.
 
 ## Klart
 
@@ -9,7 +9,12 @@ Senast uppdaterad 2026-11-14.
 - [x] **Steg 3: Galaxen.** Stjärnor, ljusstråk, tända taggar, glöd, kameraflygningar, sparade positioner.
 - [x] **Steg 4: Byggläget.** Sök i Libris, lägg in böcker, koppla ihop dem med typ, riktning, motivering och signatur, sätt taggar, ändra, ta bort och ångra.
 
+- [x] **Mellansteg: inloggning för redaktörer.** Galaxen delas via servern (Vercel + Neon). Redaktörer loggar in och ser och ändrar bara sina egna boktips. Administratören skapar konton. Se avsnittet nedan och `docs/VERCEL.md`.
+- [x] **Mellansteg: import från Goodreads.** Vidars Goodreads-lista är inläst med svenska utgåvor från Libris. Den ligger i `public/startgalax.json` och ersätter testgalaxen. Se avsnittet nedan.
+
 ## Nästa steg
+
+**Publicera på Vercel** enligt `docs/VERCEL.md`: skapa projektet, koppla på Neon, lägg in `SESSION_SECRET`, `ADMIN_USERNAME` och `ADMIN_PASSWORD`, publicera igen och logga in. Därefter fler lösa stjärnor från Libris och steg 5.
 
 **Steg 5: Utforskaläget.** Körs i en ny session med Opus. Läs avsnitten "Användarflöden" (Besökaren utforskar och Tom träff) och "Arbetsordning" i `docs/PLAN.md`.
 
@@ -19,6 +24,46 @@ Det som redan finns att bygga på:
 - Bokkortet i `src/main.js` (`renderCard`) är en enkel första version. Steg 5 bygger ut det: sökning, tom träff, guidad startpunkt och länken till katalogen.
 - `el()` och `cover()` ligger i `src/ui/dom.js` och delas av bokkortet och byggläget.
 - Läget styrs av `setMode('utforska' | 'bygga')` i `src/main.js`. Adressen `#bygga` öppnar byggläget direkt.
+
+## Inloggning och delad galax (2026-11-15)
+
+Galaxen sparas inte längre bara i webbläsaren. När serverfunktionerna finns (på Vercel, eller lokalt med `npm run dev`) delas den av alla.
+
+- **Serverfunktioner** i `api/`: `galaxy` (läsa och ändra), `login`, `logout`, `me` (vem är inloggad, signatur, byta lösenord) och `users` (konton, bara administratören). Hjälpkoden ligger i `server/`.
+- **Databas:** Neon Postgres via Vercel (`DATABASE_URL`). Två tabeller: `users` och `galaxy` (hela galaxen som ett JSON-dokument med ett versionsnummer, så att två samtidiga ändringar inte skriver över varandra). Utan `DATABASE_URL` sparas allt i en fil i `.data/`, för lokal utveckling och testerna. Nytt paket: `@neondatabase/serverless`.
+- **Ändringspaket** (`src/data/patch.js`): byggläget gör ändringen i webbläsaren som förut, och skickar sedan bara skillnaden till servern. Samma kod kontrollerar behörigheten i webbläsaren (för ett snabbt felmeddelande) och på servern (som bestämmer). Ångra skickar en ändring tillbaka.
+- **Konton:** användarnamn och lösenord. Lösenordet behöver minst 6 tecken, stor och liten bokstav, en siffra och ett specialtecken (`src/data/password.js`). Lösenord sparas som scrypt-hash. Inloggningen är en signerad kaka (HttpOnly, 30 dagar). Byts lösenordet slutar gamla inloggningar att gälla. Kontot låses i 15 minuter efter 8 felaktiga försök.
+- **Första kontot** skapas när man loggar in med `ADMIN_USERNAME` och `ADMIN_PASSWORD`, och bara om det inte finns några konton.
+- **Behörigheter:** en redaktör ser och ändrar bara sina egna boktips i byggläget. Allas boktips syns i utforskaläget. Redaktörer kan lägga till böcker och sätta taggar. Genre och borttagning gäller bara böcker man själv har lagt till och som saknar andras boktips. Administratören får allt, även att byta namn på taggar, importera filer och hantera konton. Tabellen står i `docs/VERCEL.md`.
+- **Ägare:** kopplingar har fältet `owner` och böcker `addedBy` (användarens id). Importerade kopplingar har ingen ägare, så bara administratören kan ändra dem.
+- **Bli redaktör:** knappen öppnar ett färdigt mejl till Vidars adress (`src/config.js`).
+- **Utan server** (`npm run preview`, en statisk sida) fungerar allt som förut: galaxen sparas i webbläsaren, med export och påminnelse, och byggläget är öppet.
+- Kontrollerat i en riktig webbläsare mot den lokala servern: fel lösenord, inloggning som administratör, skapa en redaktör (svagt lösenord avvisas), logga ut och in som redaktören, bara egna boktips syns, genre låst och ingen borttagning för andras böcker, nytt boktips sparas på servern med rätt ägare, signaturen sparas på kontot, ångra tas bort även på servern, ny bok från Libris går att ändra, byte till för svagt lösenord avvisas. Skärmbilder: `docs/skarmbilder/inloggning.png`, `redaktorer.png`, `redaktor-bok.png`.
+- **Inte kontrollerat:** själva publiceringen på Vercel med Neon. Koden för Neon följer paketets dokumentation men har inte körts mot en riktig databas.
+
+## Importen från Goodreads (2026-11-15)
+
+Ett mellansteg för att få en demo med riktiga böcker. Koden ligger i `scripts/goodreads/` och körs så här:
+
+```
+node scripts/goodreads/import.mjs sökväg/till/goodreads_library_export.csv
+```
+
+Skriptet skriver om `public/startgalax.json` och `docs/goodreads-import.md`. Svaren från Libris sparas i mappen `.goodreads/` (ligger inte i Git), så en ny körning tar några sekunder.
+
+- **Svenska utgåvor.** Varje bok söks i Libris med språkfiltret svenska, i tre steg: ISBN, sedan efternamn och titel, sedan alla svenska böcker där någon med författarens efternamn medverkar. En översättning känns igen på originaltiteln i Libris (`translationOf`). Libris-modulen har fått två nya val för det: `language` och `familyName`. De klarar bara XL, så då provas inte Xsearch.
+- **Resultat:** 417 böcker i exporten, 387 stjärnor. 290 hittades på svenska (vissa blev samma verk, till exempel en svensk samlingsvolym). **123 finns inte på svenska och står på engelska**, med uppgifter från en engelsk utgåva i Libris (103) eller bara från Goodreads (20). Fyra hoppades över med flit (dubbletter på andra språk). Listan står i `docs/goodreads-import.md`.
+- **Engelska böcker** får taggen *Engelsk skönlitteratur* (eller *Engelsk facklitteratur*) utöver genren. Libris genreförslag är svagt för engelska utgåvor, så en engelsk bok i en serie får seriens genre, och en bok utan genre får samma genre som författarens andra böcker. Engelska titlar med undertitel jämförs bara på ISBN, eftersom Libris ofta har en för allmän titel (till exempel "The Sandman" för alla tio volymerna).
+- **Fel i genreförslaget rättat:** Libris märker facklitteratur "Ej skönlitteratur", och det lästes som roman. Det gällde också byggläget. Nu blir det Fakta (eller Biografi).
+- **Rättelser** står i `scripts/goodreads/rattelser.json`: svensk titel för böcker vars titel inte går att räkna ut (klassiker översatta från andra språk, svenska originalböcker som Vidar läst på engelska), genre där Libris förslag var uppenbart fel (till exempel serieromaner), och böcker som hoppas över. Libris måste ändå bekräfta varje titelrättelse.
+- **Kopplingar (431)** bygger på det Vidar själv har angett på Goodreads, inte på något påhittat:
+  - *Samma betyg på Goodreads* (ny kopplingstyp, 282 stråk): böcker med samma betyg (3–5 stjärnor) och samma genre, kopplade i en ring så att varje bok får två grannar. Alla med alla hade blivit omkring 11 000 stråk. Betyg 1 och 2 ger inga kopplingar, eftersom galaxen tipsar om böcker.
+  - *För den som läser serien* (149 stråk): del för del enligt Goodreads serieuppgifter.
+  - Alla har signaturen **"Vidar (Goodreads)"**, så att de är lätta att hitta och ta bort när riktiga kopplingar finns.
+- **Taggar** är bokens genre, enligt Libris förslag, plus språktaggen för engelska böcker. Inga taggar från Vidars hyllor.
+- Skärmbild: `docs/skarmbilder/goodreads-galax.png`.
+
+Att tänka på: undertiteln på sidan säger "Varje ljusstråk har en bibliotekarie dragit". Det stämmer inte helt för importerade kopplingar. Bokkortet visar signaturen och motiveringen, så det framgår där.
 
 ## Hur byggläget fungerar (steg 4)
 
@@ -62,7 +107,7 @@ När Vidar har byggt de första böckerna exporteras de och läggs i `public/sta
 
 ## Kontrollerat
 
-- `npm test`: 18 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
+- `npm test`: 42 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
 - Byggläget i en riktig webbläsare mot riktiga Libris (2026-11-14): sök, lägg in en bok, sätt tagg, koppla ihop med en ny bok, fel när motiveringen saknas, byt håll, spara, ändra, ta bort, ångra med knappen och med Ctrl+Z, byta läge med en bok vald, omladdning (galaxen och byggläget finns kvar), mobilstorlek. Inga fel i konsolen.
 - I en riktig webbläsare: klick på en stjärna, bokkort, Escape, import, påminnelse om export, export, sparade positioner efter omladdning (ingen stjärna flyttade sig), ny bok utan att resten flyttas, minskad rörelse, mobilstorlek.
 - Skärmbilder finns i `docs/skarmbilder/` (steg 3 och steg 4).
@@ -90,5 +135,7 @@ När Vidar har byggt de första böckerna exporteras de och läggs i `public/sta
 Övriga öppna frågor står kvar i `docs/PLAN.md`.
 
 ## Molnmiljön
+
+Lokalt med inloggning: `ADMIN_USERNAME=vidar ADMIN_PASSWORD='Hemligt!1' npm run dev`. Allt sparas då i `.data/`.
 
 Sessioner i Claude Code på webben behöver miljön **bokgalaxen**, som släpper igenom `libris.kb.se` och `openlibrary.org`. Standardmiljön blockerar dem.
