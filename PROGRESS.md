@@ -10,11 +10,12 @@ Senast uppdaterad 2026-11-15.
 - [x] **Steg 4: Byggläget.** Sök i Libris, lägg in böcker, koppla ihop dem med typ, riktning, motivering och signatur, sätt taggar, ändra, ta bort och ångra.
 
 - [x] **Mellansteg: inloggning för redaktörer.** Galaxen delas via servern (Vercel + Neon). Redaktörer loggar in och ser och ändrar bara sina egna boktips. Administratören skapar konton. Se avsnittet nedan och `docs/VERCEL.md`.
+- [x] **Mellansteg: urval från Libris.** 400 lösa stjärnor i `docs/libris-urval.json`, redo att slås ihop. Se avsnittet nedan.
 - [x] **Mellansteg: import från Goodreads.** Vidars Goodreads-lista är inläst med svenska utgåvor från Libris. Den ligger i `public/startgalax.json` och ersätter testgalaxen. Se avsnittet nedan.
 
 ## Nästa steg
 
-**Publicera på Vercel** enligt `docs/VERCEL.md`: skapa projektet, koppla på Neon, lägg in `SESSION_SECRET`, `ADMIN_USERNAME` och `ADMIN_PASSWORD`, publicera igen och logga in. Därefter fler lösa stjärnor från Libris och steg 5.
+**Publicera på Vercel** enligt `docs/VERCEL.md`: skapa projektet, koppla på Neon, lägg in `SESSION_SECRET`, `ADMIN_USERNAME` och `ADMIN_PASSWORD`, publicera igen och logga in. Därefter steg 5. Fler lösa stjärnor från Libris finns klara i `docs/libris-urval.json` (se avsnittet nedan): Vidar lägger in dem själv med Galaxfil → Slå ihop med en fil.
 
 **Steg 5: Utforskaläget.** Körs i en ny session med Opus. Läs avsnitten "Användarflöden" (Besökaren utforskar och Tom träff) och "Arbetsordning" i `docs/PLAN.md`.
 
@@ -40,6 +41,25 @@ Galaxen sparas inte längre bara i webbläsaren. När serverfunktionerna finns (
 - **Utan server** (`npm run preview`, en statisk sida) fungerar allt som förut: galaxen sparas i webbläsaren, med export och påminnelse, och byggläget är öppet.
 - Kontrollerat i en riktig webbläsare mot den lokala servern: fel lösenord, inloggning som administratör, skapa en redaktör (svagt lösenord avvisas), logga ut och in som redaktören, bara egna boktips syns, genre låst och ingen borttagning för andras böcker, nytt boktips sparas på servern med rätt ägare, signaturen sparas på kontot, ångra tas bort även på servern, ny bok från Libris går att ändra, byte till för svagt lösenord avvisas. Skärmbilder: `docs/skarmbilder/inloggning.png`, `redaktorer.png`, `redaktor-bok.png`.
 - **Inte kontrollerat:** själva publiceringen på Vercel med Neon. Koden för Neon följer paketets dokumentation men har inte körts mot en riktig databas.
+
+## Urval från Libris (2026-11-15)
+
+400 svenska böcker som lösa stjärnor, utan kopplingar och motiveringar, i en egen galaxfil. **`public/startgalax.json` är inte ändrad** (galaxen ligger i databasen på Vercel). Vidar lägger in `docs/libris-urval.json` själv med Galaxfil → Slå ihop med en fil. Provkört med `mergeGalaxies`: 400 böcker läggs till, 0 slås ihop med befintliga, kopplingarna är oförändrade, 787 böcker totalt. Siffror och ett stickprov på 20 böcker står i `docs/libris-urval.md`.
+
+Skriptet körs så här (några minuter första gången, ett anrop i sekunden):
+
+```
+node scripts/libris-urval/urval.mjs            # högst 400 nya
+node scripts/libris-urval/urval.mjs --max=300  # färre
+```
+
+- **Tre urval:** Augustpris-nominerade (45), svensk skönlitteratur 2015–2025 (182) och barn- och ungdomsböcker 2010–2025 (173). Översättningar till svenska ingår. Skönlitteratur och barn bygger på de utgåvor som flest bibliotek har enligt Libris (rangordning, inte kvalitet), per år och genre, med högst två böcker per författare. Kvoterna står överst i `urval.mjs`.
+- **Ett verk, inte en utgåva:** titel, författare, alla ISBN och Libris-id från de 25 äldsta svenska utgåvorna, och första svenska utgivningsår. Nyutgåvor av böcker som kom före urvalets första år hoppas över. Genre är Libris förslag, och taggen är genrens namn.
+- **Hoppar över** recensioner, ljudböcker, filmer, böcker om en annan bok, böcker utan författare och dubbletter av `public/startgalax.json` (`findSameWork`, och även originaltiteln, så att en svensk utgåva av en bok som ligger där på engelska inte blir en ny stjärna).
+- **Libris-modulen** (`src/libris`) har fått fler val, bara tillägg: `filters`, `sort` och `skip` i `searchBooks`, samt `holdings` (antal bibliotek) och flaggorna `isReview`, `isAudio` och `isAboutBook` på varje träff. Sökningen i byggläget är oförändrad. Hämtningen med cache och paus ligger i `scripts/libris-urval/fetch.js`, och cachen i `.libris-urval/` (ligger inte i Git). 10 nya tester i `tests/libris-urval.test.js`.
+- **Augustpris-listan är ofullständig och måste granskas.** Libris har inget fält för priset, och SVT, Sveriges Radio och Wikipedia gick inte att nå från molnmiljön. Listan i `scripts/libris-urval/augustpris.json` (47 titlar) är sådant som webbsökning och minne var överens om. Skriptet kontrollerar bara att boken finns på svenska i Libris. Fyra titlar från 2024 fanns inte alls i Libris och togs bort, så fler fel kan finnas. Granska mot augustpriset.se, fyll på och kör skriptet igen (alla svar ligger i cachen). Vill man att Claude läser de riktiga sidorna behöver `www.svt.se` släppas igenom i miljön.
+- **Genren är bara Libris förslag** och kan vara fel (till exempel hamnar vuxenböcker som Libris också märker "ungdom" under Barn och unga, och Lisa och Lilly står som Biografi). Barn och unga blir 183 av 400 stjärnor, så den färgen får stor plats.
+- **Galaxen blir större än det som är provat:** 787 stjärnor mot cirka 700. Prova bildhastigheten på en vanlig dator efter sammanslagningen. Blir den för seg kan man köra skriptet med `--max=300`.
 
 ## Importen från Goodreads (2026-11-15)
 
