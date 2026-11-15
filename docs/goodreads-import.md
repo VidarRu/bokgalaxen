@@ -7,22 +7,25 @@ Skapad av `scripts/goodreads/import.mjs` 2026-11-15. Kör skriptet igen för att
 - Böcker i exporten: 417
 - Hittade på svenska i Libris: 290 (via ISBN 32, via titel 223, bland författarens svenska böcker 1, osäkra 6, via rättelse 28)
 - Samma verk två gånger i exporten (blev en stjärna): 26
-- Stjärnor i galaxen: 264
-- Saknas på svenska, eller gick inte att hitta: 127
-- Hoppades över med flit: 0
+- Stjärnor i galaxen: 387
+- Inlagda på engelska (finns inte på svenska): 123, varav 103 med uppgifter från en engelsk utgåva i Libris och 20 bara med uppgifter från Goodreads
+- Genre för engelska böcker: från författarens andra böcker 19, från serien 8, saknas fortfarande 0
+- Genre rättad för hand: 36
+- Gick inte att lägga in: 0
+- Hoppades över med flit: 4
 
-Kopplingar: 269 (samma betyg 187, serier 82). Betygen 1 och 2 ger inga kopplingar, eftersom galaxen tipsar om böcker.
+Kopplingar: 431 (samma betyg 282, serier 149). Betygen 1 och 2 ger inga kopplingar, eftersom galaxen tipsar om böcker.
 
 Genrer (från Libris förslag):
 
-- Roman: 139
-- Fantasy och science fiction: 52
-- Barn och unga: 43
+- Roman: 137
+- Fantasy och science fiction: 122
+- Barn och unga: 50
+- Serier: 34
+- Fakta: 22
 - Deckare och spänning: 11
 - Lyrik och dramatik: 8
-- Serier: 6
 - Biografi och memoar: 3
-- Fakta: 2
 
 ## Osäkra träffar, titta på dem först
 
@@ -293,9 +296,9 @@ Engelsk titel på Goodreads, svensk titel från Libris. Är något fel, lägg en
 | The Great Gatsby | Den store Gatsby | F. Scott Fitzgerald |
 | Maus I: A Survivor's Tale: My Father Bleeds History | Maus | Art Spiegelman |
 
-## Hittades inte på svenska
+## Inlagda på engelska
 
-Antingen finns boken inte översatt, eller så heter den något helt annat på svenska. Rättelser läggs i `scripts/goodreads/rattelser.json` med Goodreads-id som nyckel, till exempel `{"123": {"title": "Den svenska titeln"}}` eller `{"123": {"skip": true}}`.
+Hittades inte på svenska, så de står på engelska med taggen "Engelsk skönlitteratur" eller "Engelsk facklitteratur". Finns någon ändå på svenska under ett annat namn? Rättelser läggs i `scripts/goodreads/rattelser.json` med Goodreads-id som nyckel, till exempel `{"123": {"title": "Den svenska titeln"}}` eller `{"123": {"skip": true}}`.
 
 | Titel på Goodreads | Författare | Goodreads-id |
 | --- | --- | --- |
@@ -422,6 +425,12 @@ Antingen finns boken inte översatt, eller så heter den något helt annat på s
 | The Sandman, Vol. 2: The Doll's House | Neil Gaiman | 25099 |
 | Ready Player One (Ready Player One, #1) | Ernest Cline | 9969571 |
 | Batman: The Killing Joke | Alan Moore | 96358 |
+
+
+## Hoppades över
+
+| Titel | Författare | Goodreads-id |
+| --- | --- | --- |
 | Locke & Key: Welcome to Lovecraft #1 | Joe Hill | 23002051 |
 | Sandman. Tom 1. Sen sprawiedliwych | Neil Gaiman | 17255666 |
 | V for Vendetta #1 | Alan Moore | 18981933 |

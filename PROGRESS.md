@@ -35,14 +35,15 @@ node scripts/goodreads/import.mjs sökväg/till/goodreads_library_export.csv
 Skriptet skriver om `public/startgalax.json` och `docs/goodreads-import.md`. Svaren från Libris sparas i mappen `.goodreads/` (ligger inte i Git), så en ny körning tar några sekunder.
 
 - **Svenska utgåvor.** Varje bok söks i Libris med språkfiltret svenska, i tre steg: ISBN, sedan efternamn och titel, sedan alla svenska böcker där någon med författarens efternamn medverkar. En översättning känns igen på originaltiteln i Libris (`translationOf`). Libris-modulen har fått två nya val för det: `language` och `familyName`. De klarar bara XL, så då provas inte Xsearch.
-- **Resultat:** 417 böcker i exporten, 290 hittade på svenska, 264 stjärnor (vissa blev samma verk, till exempel en svensk samlingsvolym), 127 saknas. De flesta som saknas finns inte översatta, till exempel Dresden Files, senare Expanse-böcker och de sista Skivvärlden-böckerna. Listan står i `docs/goodreads-import.md`.
-- **Rättelser** för böcker vars svenska titel inte går att räkna ut (klassiker översatta från andra språk, svenska originalböcker som Vidar läst på engelska) står i `scripts/goodreads/rattelser.json`. Libris måste ändå bekräfta varje rättelse.
-- **Kopplingar (269)** bygger på det Vidar själv har angett på Goodreads, inte på något påhittat:
-  - *Samma betyg på Goodreads* (ny kopplingstyp, 187 stråk): böcker med samma betyg (3–5 stjärnor) och samma genre, kopplade i en ring så att varje bok får två grannar. Alla med alla hade blivit omkring 11 000 stråk. Betyg 1 och 2 ger inga kopplingar, eftersom galaxen tipsar om böcker.
-  - *För den som läser serien* (82 stråk): del för del enligt Goodreads serieuppgifter.
+- **Resultat:** 417 böcker i exporten, 387 stjärnor. 290 hittades på svenska (vissa blev samma verk, till exempel en svensk samlingsvolym). **123 finns inte på svenska och står på engelska**, med uppgifter från en engelsk utgåva i Libris (103) eller bara från Goodreads (20). Fyra hoppades över med flit (dubbletter på andra språk). Listan står i `docs/goodreads-import.md`.
+- **Engelska böcker** får taggen *Engelsk skönlitteratur* (eller *Engelsk facklitteratur*) utöver genren. Libris genreförslag är svagt för engelska utgåvor, så en engelsk bok i en serie får seriens genre, och en bok utan genre får samma genre som författarens andra böcker. Engelska titlar med undertitel jämförs bara på ISBN, eftersom Libris ofta har en för allmän titel (till exempel "The Sandman" för alla tio volymerna).
+- **Fel i genreförslaget rättat:** Libris märker facklitteratur "Ej skönlitteratur", och det lästes som roman. Det gällde också byggläget. Nu blir det Fakta (eller Biografi).
+- **Rättelser** står i `scripts/goodreads/rattelser.json`: svensk titel för böcker vars titel inte går att räkna ut (klassiker översatta från andra språk, svenska originalböcker som Vidar läst på engelska), genre där Libris förslag var uppenbart fel (till exempel serieromaner), och böcker som hoppas över. Libris måste ändå bekräfta varje titelrättelse.
+- **Kopplingar (431)** bygger på det Vidar själv har angett på Goodreads, inte på något påhittat:
+  - *Samma betyg på Goodreads* (ny kopplingstyp, 282 stråk): böcker med samma betyg (3–5 stjärnor) och samma genre, kopplade i en ring så att varje bok får två grannar. Alla med alla hade blivit omkring 11 000 stråk. Betyg 1 och 2 ger inga kopplingar, eftersom galaxen tipsar om böcker.
+  - *För den som läser serien* (149 stråk): del för del enligt Goodreads serieuppgifter.
   - Alla har signaturen **"Vidar (Goodreads)"**, så att de är lätta att hitta och ta bort när riktiga kopplingar finns.
-- **Taggar** är bokens genre, enligt Libris förslag. Inga taggar från Vidars hyllor.
-- 52 böcker har inga kopplingar och ligger som lösa stjärnor.
+- **Taggar** är bokens genre, enligt Libris förslag, plus språktaggen för engelska böcker. Inga taggar från Vidars hyllor.
 - Skärmbild: `docs/skarmbilder/goodreads-galax.png`.
 
 Att tänka på: undertiteln på sidan säger "Varje ljusstråk har en bibliotekarie dragit". Det stämmer inte helt för importerade kopplingar. Bokkortet visar signaturen och motiveringen, så det framgår där.
@@ -89,7 +90,7 @@ När Vidar har byggt de första böckerna exporteras de och läggs i `public/sta
 
 ## Kontrollerat
 
-- `npm test`: 20 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
+- `npm test`: 21 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
 - Byggläget i en riktig webbläsare mot riktiga Libris (2026-11-14): sök, lägg in en bok, sätt tagg, koppla ihop med en ny bok, fel när motiveringen saknas, byt håll, spara, ändra, ta bort, ångra med knappen och med Ctrl+Z, byta läge med en bok vald, omladdning (galaxen och byggläget finns kvar), mobilstorlek. Inga fel i konsolen.
 - I en riktig webbläsare: klick på en stjärna, bokkort, Escape, import, påminnelse om export, export, sparade positioner efter omladdning (ingen stjärna flyttade sig), ny bok utan att resten flyttas, minskad rörelse, mobilstorlek.
 - Skärmbilder finns i `docs/skarmbilder/` (steg 3 och steg 4).

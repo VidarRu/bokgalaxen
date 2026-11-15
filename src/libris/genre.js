@@ -15,7 +15,10 @@ const RULES = [
 // sab: SAB-koder som "Hc.01" eller "uHc".
 // audience: målgruppstermer som "Barn" eller "Ungdom".
 export function suggestGenre({ genreForms = [], sab = [], audience = [] } = {}) {
-  const forms = genreForms.join(' | ');
+  // "Ej skönlitteratur" betyder facklitteratur. Det får inte läsas som
+  // skönlitteratur av mönstren nedan.
+  const nonFiction = genreForms.some((f) => /^ej skönlitteratur$/i.test(String(f).trim()));
+  const forms = genreForms.filter((f) => !/^ej skönlitteratur$/i.test(String(f).trim())).join(' | ');
   const codes = sab.map((c) => String(c));
   const young =
     audience.some((a) => /barn|ungdom|juvenile/i.test(a)) ||
@@ -26,6 +29,7 @@ export function suggestGenre({ genreForms = [], sab = [], audience = [] } = {}) 
     if (pattern.test(forms)) return young && genre !== 'serier' ? 'barn-unga' : genre;
   }
   if (young) return 'barn-unga';
+  if (nonFiction) return codes.some((c) => /^L/.test(c)) ? 'biografi' : 'fakta';
   if (codes.some((c) => /^H[a-zåäö]*\.0?3/.test(c) || /^H[a-zåäö]*\.0?2/.test(c))) return 'lyrik';
   if (codes.some((c) => /^L/.test(c))) return 'biografi';
   if (codes.some((c) => /^H/.test(c)) || /romaner|noveller|skönlitteratur/i.test(forms)) return 'roman';

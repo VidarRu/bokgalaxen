@@ -1,4 +1,6 @@
 // Gör om en export från Goodreads till en galaxfil med svenska utgåvor.
+// Böcker som inte finns på svenska läggs in på engelska, med taggen
+// "Engelsk skönlitteratur" (eller "Engelsk facklitteratur").
 //
 //   node scripts/goodreads/import.mjs <goodreads_library_export.csv>
 //
@@ -21,7 +23,8 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 import { parseCsv, readGoodreadsRow, ratingWord } from './csv.js';
-import { findSwedishEdition } from './match.js';
+import { findSwedishEdition, findEdition } from './match.js';
+import { normalizeAuthor, normalizeIsbn } from '../../src/data/normalize.js';
 import { createEmptyGalaxy, addBook, addRelation, tagBook } from '../../src/data/model.js';
 import { getGenre } from '../../src/data/genres.js';
 
@@ -67,6 +70,33 @@ const rows = parseCsv(readFileSync(csvPath, 'utf8')).map(readGoodreadsRow);
 console.log(`${rows.length} böcker i exporten.`);
 
 const authorCache = new Map();
+
+// Finns boken inte på svenska läggs den in på engelska. Titeln tas från
+// Goodreads (Libris skriver ofta engelska titlar med liten bokstav), övriga
+// uppgifter från en engelsk utgåva i Libris om det finns någon. Annars bara
+// från Goodreads.
+async function englishEdition(item) {
+  const found = await findEdition(item, { fetchImpl: cachedFetch, authorCache, language: 'eng' });
+  const fromGoodreads = {
+    title: item.title,
+    author: item.author,
+    year: item.year,
+    isbns: item.isbn ? [normalizeIsbn(item.isbn)] : [],
+    librisIds: [],
+    librisWorkIds: [],
+    subjects: [],
+    genre: null,
+    originalTitles: [],
+    editions: 1,
+  };
+  if (!found.book) return { how: 'engelska, bara Goodreads', book: fromGoodreads, english: true };
+  return {
+    how: 'engelska, Libris',
+    book: { ...found.book, title: item.title, author: item.author, year: item.year ?? found.book.year, originalTitles: [] },
+    english: true,
+  };
+}
+
 const results = [];
 let done = 0;
 async function worker(queue) {
@@ -76,10 +106,12 @@ async function worker(queue) {
     if (fix?.skip) {
       result = { how: 'hoppas över', book: null };
     } else {
-      const input = fix ? { ...item, title: fix.title ?? item.title, author: fix.author ?? item.author, isbn: fix.isbn ?? '' } : item;
+      const retitled = fix && (fix.title || fix.author);
+      const input = retitled ? { ...item, title: fix.title ?? item.title, author: fix.author ?? item.author, isbn: fix.isbn ?? '' } : item;
       try {
         result = await findSwedishEdition(input, { fetchImpl: cachedFetch, authorCache });
-        if (fix && result.book) result.how = 'rättelse';
+        if (retitled && result.book) result.how = 'rättelse';
+        if (!result.book) result = await englishEdition(item);
       } catch (error) {
         result = { how: null, book: null, error: error.message };
       }
@@ -103,6 +135,7 @@ if (failed.length) {
 let galaxy = createEmptyGalaxy();
 galaxy.description =
   'Demo. Böckerna kommer från Vidars läsning på Goodreads, med svenska utgåvor från Libris. ' +
+  'Böcker som inte finns översatta står på engelska. ' +
   'Kopplingarna bygger på Vidars egna betyg och på bokserier. Taggarna är genrer.';
 galaxy.relationTypes.push({ ...RATED_TYPE });
 
@@ -117,9 +150,64 @@ for (const r of results) {
   r.duplicate = !added.created;
 }
 
-// Taggar = genre
+// Engelska böcker som Libris inte har en genre för får samma genre som
+// författarens andra böcker i galaxen, eller som andra delar i samma serie.
+const englishIds = new Set(results.filter((r) => r.english && r.bookId).map((r) => r.bookId));
+const mostCommon = (genres) => {
+  const counts = new Map();
+  for (const g of genres.filter(Boolean)) counts.set(g, (counts.get(g) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+};
+const genreBy = { author: 0, series: 0, none: 0 };
+for (let pass = 0; pass < 2; pass++) {
+  for (const id of englishIds) {
+    const book = galaxy.books.find((b) => b.id === id);
+    if (book.genre) continue;
+    const author = normalizeAuthor(book.author);
+    let genre = mostCommon(galaxy.books.filter((b) => b.id !== id && normalizeAuthor(b.author) === author).map((b) => b.genre));
+    if (genre) genreBy.author++;
+    if (!genre) {
+      const names = new Set(results.filter((r) => r.bookId === id).flatMap((r) => r.goodreads.series.map((x) => x.name)));
+      const siblings = new Set(results.filter((r) => r.bookId && r.bookId !== id && r.goodreads.series.some((x) => names.has(x.name))).map((r) => r.bookId));
+      genre = mostCommon(galaxy.books.filter((b) => siblings.has(b.id)).map((b) => b.genre));
+      if (genre) genreBy.series++;
+    }
+    if (genre) galaxy = { ...galaxy, books: galaxy.books.map((b) => (b.id === id ? { ...b, genre } : b)) };
+  }
+}
+
+// Libris kallar många engelska fantasy- och sf-böcker bara "Roman". En
+// engelsk bok i en serie får därför seriens vanligaste genre.
+for (const id of englishIds) {
+  const book = galaxy.books.find((b) => b.id === id);
+  if (book.genre && book.genre !== 'roman') continue;
+  const names = new Set(results.filter((r) => r.bookId === id).flatMap((r) => r.goodreads.series.map((x) => x.name)));
+  const siblings = new Set(results.filter((r) => r.bookId && r.bookId !== id && r.goodreads.series.some((x) => names.has(x.name))).map((r) => r.bookId));
+  const genre = mostCommon(galaxy.books.filter((b) => siblings.has(b.id)).map((b) => b.genre));
+  if (genre && genre !== book.genre) {
+    galaxy = { ...galaxy, books: galaxy.books.map((b) => (b.id === id ? { ...b, genre } : b)) };
+    genreBy.series++;
+  }
+}
+
+// Genre rättad för hand i rattelser.json.
+for (const r of results) {
+  const genre = corrections[r.goodreads.goodreadsId]?.genre;
+  if (genre && r.bookId) {
+    galaxy = { ...galaxy, books: galaxy.books.map((b) => (b.id === r.bookId ? { ...b, genre } : b)) };
+    genreBy.manual = (genreBy.manual ?? 0) + 1;
+  }
+}
+genreBy.none = galaxy.books.filter((b) => englishIds.has(b.id) && !b.genre).length;
+
+// Taggar = genre, och för engelska böcker även språket.
+const NONFICTION = new Set(['fakta', 'biografi']);
 for (const book of galaxy.books) {
   if (book.genre) galaxy = tagBook(galaxy, book.id, getGenre(book.genre).name).galaxy;
+  if (englishIds.has(book.id)) {
+    const tag = NONFICTION.has(book.genre) ? 'Engelsk facklitteratur' : 'Engelsk skönlitteratur';
+    galaxy = tagBook(galaxy, book.id, tag).galaxy;
+  }
 }
 
 // Betyg: ring per betyg och genre, i den ordning böckerna lästes.
@@ -177,7 +265,8 @@ writeFileSync('public/startgalax.json', `${JSON.stringify(galaxy, null, 1)}\n`);
 
 // --- Rapporten ---------------------------------------------------------
 
-const found = results.filter((r) => r.book);
+const english = results.filter((r) => r.english);
+const found = results.filter((r) => r.book && !r.english);
 const missing = results.filter((r) => !r.book && r.how !== 'hoppas över');
 const skipped = results.filter((r) => r.how === 'hoppas över');
 const translated = found.filter((r) => r.book.originalTitles.length && r.how !== 'isbn' && r.how !== 'osäker');
@@ -198,7 +287,10 @@ Skapad av \`scripts/goodreads/import.mjs\` ${new Date().toISOString().slice(0, 1
 - Hittade på svenska i Libris: ${found.length} (via ISBN ${count('isbn')}, via titel ${count('titel')}, bland författarens svenska böcker ${count('författare')}, osäkra ${count('osäker')}, via rättelse ${count('rättelse')})
 - Samma verk två gånger i exporten (blev en stjärna): ${found.filter((r) => r.duplicate).length}
 - Stjärnor i galaxen: ${galaxy.books.length}
-- Saknas på svenska, eller gick inte att hitta: ${missing.length}
+- Inlagda på engelska (finns inte på svenska): ${english.length}, varav ${english.filter((r) => r.how === 'engelska, Libris').length} med uppgifter från en engelsk utgåva i Libris och ${english.filter((r) => r.how === 'engelska, bara Goodreads').length} bara med uppgifter från Goodreads
+- Genre för engelska böcker: från författarens andra böcker ${genreBy.author}, från serien ${genreBy.series}, saknas fortfarande ${genreBy.none}
+- Genre rättad för hand: ${genreBy.manual ?? 0}
+- Gick inte att lägga in: ${missing.length}
 - Hoppades över med flit: ${skipped.length}
 
 Kopplingar: ${galaxy.relations.length} (samma betyg ${rel(RATED_TYPE.id)}, serier ${rel('serien')}). Betygen 1 och 2 ger inga kopplingar, eftersom galaxen tipsar om böcker.
@@ -223,14 +315,15 @@ Engelsk titel på Goodreads, svensk titel från Libris. Är något fel, lägg en
 | --- | --- | --- |
 ${translated.map((r) => `| ${r.goodreads.title} | ${r.book.title} | ${r.book.author} |`).join('\n')}
 
-## Hittades inte på svenska
+## Inlagda på engelska
 
-Antingen finns boken inte översatt, eller så heter den något helt annat på svenska. Rättelser läggs i \`scripts/goodreads/rattelser.json\` med Goodreads-id som nyckel, till exempel \`{"123": {"title": "Den svenska titeln"}}\` eller \`{"123": {"skip": true}}\`.
+Hittades inte på svenska, så de står på engelska med taggen "Engelsk skönlitteratur" eller "Engelsk facklitteratur". Finns någon ändå på svenska under ett annat namn? Rättelser läggs i \`scripts/goodreads/rattelser.json\` med Goodreads-id som nyckel, till exempel \`{"123": {"title": "Den svenska titeln"}}\` eller \`{"123": {"skip": true}}\`.
 
 | Titel på Goodreads | Författare | Goodreads-id |
 | --- | --- | --- |
-${missing.map(line).join('\n')}
+${english.map(line).join('\n')}
+${missing.length ? `\n## Gick inte att lägga in\n\n| Titel | Författare | Goodreads-id |\n| --- | --- | --- |\n${missing.map(line).join('\n')}\n` : ''}
 ${skipped.length ? `\n## Hoppades över\n\n| Titel | Författare | Goodreads-id |\n| --- | --- | --- |\n${skipped.map(line).join('\n')}\n` : ''}`;
 writeFileSync('docs/goodreads-import.md', report);
 
-console.log(`Klart: ${galaxy.books.length} stjärnor, ${galaxy.relations.length} kopplingar, ${missing.length} hittades inte.`);
+console.log(`Klart: ${galaxy.books.length} stjärnor (${english.length} på engelska), ${galaxy.relations.length} kopplingar, ${missing.length} gick inte att lägga in.`);

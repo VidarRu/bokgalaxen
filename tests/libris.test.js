@@ -85,3 +85,10 @@ test('sökning på språk skickar språkfiltret till XL och provar inte Xsearch'
   assert.equal(urls.length, 1);
   assert.ok(decodeURIComponent(urls[0]).includes('instanceOf.language.@id=https://id.kb.se/language/swe'));
 });
+
+test('genreförslag: "Ej skönlitteratur" blir fakta, inte roman', () => {
+  assert.equal(suggestGenre({ genreForms: ['Ej skönlitteratur'] }), 'fakta');
+  assert.equal(suggestGenre({ genreForms: ['Ej skönlitteratur'], sab: ['Lz'] }), 'biografi');
+  assert.equal(suggestGenre({ genreForms: ['Ej skönlitteratur', 'Barn- och ungdomslitteratur'] }), 'barn-unga');
+  assert.equal(suggestGenre({ genreForms: ['Romaner', 'Skönlitteratur'] }), 'roman');
+});

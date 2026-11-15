@@ -58,6 +58,13 @@ function isOmnibus(hit) {
   return new Set((hit.originalTitles ?? []).map(titleKey)).size > 1;
 }
 
+// Det genreförslag som flest utgåvor har.
+function mostCommon(values) {
+  const counts = new Map();
+  for (const v of values.filter(Boolean)) counts.set(v, (counts.get(v) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
+
 function combine(allHits, goodreads) {
   const single = allHits.filter((h) => !isOmnibus(h));
   const hits = single.length ? single : allHits;
@@ -77,19 +84,21 @@ function combine(allHits, goodreads) {
     librisIds: all('librisIds'),
     librisWorkIds: all('librisWorkIds'),
     subjects: all('subjects'),
-    genre: hits.map((h) => h.suggestedGenre).find(Boolean) ?? null,
+    genre: mostCommon(hits.flatMap((h) => Array(h.editions).fill(h.suggestedGenre))),
     originalTitles: all('originalTitles'),
     editions: hits.reduce((n, h) => n + h.editions, 0),
   };
 }
 
-async function swedish(query, search, limit = 20) {
-  const { books } = await search(query, { language: 'swe', limit });
-  return books;
+export async function findSwedishEdition(goodreads, options = {}) {
+  return findEdition(goodreads, { ...options, language: 'swe' });
 }
 
-export async function findSwedishEdition(goodreads, { fetchImpl, authorCache = new Map() } = {}) {
+// Samma sökning, men för utgåvor på ett annat språk, till exempel 'eng' för
+// böcker som inte finns översatta till svenska.
+export async function findEdition(goodreads, { fetchImpl, authorCache = new Map(), language = 'swe' } = {}) {
   const search = (q, opts) => searchBooks(q, { ...opts, fetchImpl });
+  const swedish = async (query, _search, limit = 20) => (await search(query, { language, limit })).books;
   const wanted = titleKey(goodreads.title);
   const sameAuthor = (b) => authorMatches(goodreads.author, b.author);
 
@@ -97,13 +106,31 @@ export async function findSwedishEdition(goodreads, { fetchImpl, authorCache = n
   if (goodreads.isbn) {
     const byIsbn = (await swedish(goodreads.isbn, search, 5)).filter(sameAuthor);
     if (byIsbn.length) {
-      // Hämta övriga svenska utgåvor av samma verk.
-      const more = (await swedish(`${surname(goodreads.author)} ${byIsbn[0].title}`, search)).filter(
-        (b) => sameAuthor(b) && titleKey(b.title) === titleKey(byIsbn[0].title),
-      );
-      return { how: 'isbn', book: combine([...byIsbn, ...more], goodreads) };
+      // Hämta övriga utgåvor av samma verk, men bara om titeln i Libris är
+      // samma som på Goodreads. Annars kan Libris titel vara för allmän, till
+      // exempel "The Sandman" för alla tio volymerna, och då blandas de ihop.
+      // För engelska jämförs hela titeln, med undertitel.
+      const key = language === 'swe' ? titleKey : (t) => clean(t).replace(/^(the|a|an)\s+/, '');
+      const sameTitle = [byIsbn[0].title, ...(byIsbn[0].originalTitles ?? [])].map(key).includes(key(goodreads.title));
+      const more = sameTitle
+        ? (await swedish(`${surname(goodreads.author)} ${byIsbn[0].title}`, search)).filter(
+            (b) => sameAuthor(b) && titleKey(b.title) === titleKey(byIsbn[0].title),
+          )
+        : [];
+      const book = combine([...byIsbn, ...more], goodreads);
+      // Med en allmän titel kan Libris ha slagit ihop flera volymer i svaret.
+      // Då behålls bara bokens eget ISBN, och inga Libris-id som kan höra till
+      // andra volymer.
+      if (!sameTitle) Object.assign(book, { isbns: [normalizeIsbn(goodreads.isbn)], librisIds: [], librisWorkIds: [] });
+      return { how: 'isbn', book };
     }
   }
+
+  // En engelsk titel med undertitel ("The Sandman: Overture") kan inte
+  // jämföras säkert, eftersom Libris ofta bara har huvudtiteln ("The
+  // Sandman"). Då räcker bara en träff på ISBN. Utan träff används
+  // uppgifterna från Goodreads.
+  if (language !== 'swe' && /:/.test(goodreads.title)) return { how: null, book: null };
 
   // 2. Efternamn och titel
   const direct = (await swedish(`${surname(goodreads.author)} ${goodreads.title.split(':')[0]}`, search)).filter(
@@ -113,13 +140,13 @@ export async function findSwedishEdition(goodreads, { fetchImpl, authorCache = n
 
   // 3. Allt på svenska där författarens efternamn finns med. Sökordet är
   //    förnamnet, så att andra med samma efternamn sorteras bort.
-  const name = goodreads.author;
+  const name = `${language}|${goodreads.author}`;
   if (!authorCache.has(name)) {
-    const parts = name.split(' ').filter(Boolean);
+    const parts = goodreads.author.split(' ').filter(Boolean);
     const familyName = parts[parts.length - 1];
     const pages = [];
     for (let offset = 0; offset < 300; offset += 50) {
-      const { books } = await search(parts.length > 1 ? parts[0] : '*', { language: 'swe', familyName, limit: 50, offset });
+      const { books } = await search(parts.length > 1 ? parts[0] : '*', { language, familyName, limit: 50, offset });
       pages.push(...books);
       if (!books.length) break;
     }
