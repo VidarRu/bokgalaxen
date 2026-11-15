@@ -9,6 +9,7 @@ import { normalizeGalaxy, createEmptyGalaxy, setPositions } from './model.js';
 import { mergeGalaxies } from './merge.js';
 
 const STORAGE_KEY = 'bokgalaxen.galax.v1';
+const UNDO_STEPS = 30;
 const START_FILE = `${import.meta.env?.BASE_URL ?? '/'}startgalax.json`;
 
 export function createStore({ storage = globalThis.localStorage, fetchImpl = globalThis.fetch?.bind(globalThis) } = {}) {
@@ -16,6 +17,8 @@ export function createStore({ storage = globalThis.localStorage, fetchImpl = glo
   let dirty = false; // true = det finns ändringar som inte är exporterade
   let source = 'tom'; // 'webbläsaren' | 'startfilen' | 'tom'
   const listeners = new Set();
+  // Ångra: tidigare galaxer, senaste sist. Finns bara i minnet, inte i lagringen.
+  let history = [];
 
   function notify(change) {
     for (const fn of listeners) fn({ galaxy, dirty, source, change });
@@ -46,6 +49,10 @@ export function createStore({ storage = globalThis.localStorage, fetchImpl = glo
     get source() {
       return source;
     },
+    // Vad "Ångra" skulle ångra, till exempel "kopplade ihop Aniara – Doktor Glas". null = inget att ångra.
+    get undoLabel() {
+      return history.at(-1)?.label ?? null;
+    },
 
     subscribe(fn) {
       listeners.add(fn);
@@ -60,6 +67,7 @@ export function createStore({ storage = globalThis.localStorage, fetchImpl = glo
           galaxy = normalizeGalaxy(saved.galaxy);
           dirty = Boolean(saved.dirty);
           source = 'webbläsaren';
+          history = [];
           notify('load');
           return galaxy;
         }
@@ -74,18 +82,36 @@ export function createStore({ storage = globalThis.localStorage, fetchImpl = glo
         source = 'tom';
       }
       dirty = false;
+      history = [];
       notify('load');
       return galaxy;
     },
 
     // En ändring som bibliotekarien har gjort. Markerar galaxen som inte exporterad.
     // update är en funktion som tar galaxen och ger tillbaka en ny (se model.js).
-    update(update) {
+    // label beskriver ändringen för knappen Ångra.
+    update(update, label = 'en ändring') {
+      const before = galaxy;
       galaxy = normalizeGalaxy(update(galaxy));
+      history = [...history, { galaxy: before, label }].slice(-UNDO_STEPS);
       dirty = true;
       persist();
       notify('edit');
       return galaxy;
+    },
+
+    // Går tillbaka ett steg. Stjärnornas nuvarande positioner behålls, så
+    // att galaxen inte hoppar. Svar: det som ångrades, eller null.
+    undo() {
+      const step = history.at(-1);
+      if (!step) return null;
+      history = history.slice(0, -1);
+      const positions = new Map(galaxy.books.filter((b) => b.position).map((b) => [b.id, b.position]));
+      galaxy = setPositions(step.galaxy, positions);
+      dirty = true;
+      persist();
+      notify('undo');
+      return step.label;
     },
 
     // Positionerna sparas när layouten har lagt sig. Det räknas inte som en
@@ -125,6 +151,7 @@ export function createStore({ storage = globalThis.localStorage, fetchImpl = glo
       galaxy = normalizeGalaxy(typeof json === 'string' ? JSON.parse(json) : json);
       dirty = true;
       source = 'webbläsaren';
+      history = [];
       persist();
       notify('import');
       return galaxy;
@@ -137,6 +164,7 @@ export function createStore({ storage = globalThis.localStorage, fetchImpl = glo
       galaxy = merged;
       dirty = true;
       source = 'webbläsaren';
+      history = [];
       persist();
       notify('import');
       return summary;
@@ -153,6 +181,7 @@ export function createStore({ storage = globalThis.localStorage, fetchImpl = glo
         source = 'tom';
       }
       dirty = false;
+      history = [];
       notify('load');
       return galaxy;
     },

@@ -239,15 +239,32 @@ export function addRelation(galaxy, { from, to, type, motivation, signature }) {
   return { galaxy: { ...galaxy, relations: [...galaxy.relations, relation] }, relation, created: true };
 }
 
+// Ändrar typ, motivering, signatur eller riktning (byta plats på from och to).
+// Kastar fel om ändringen skulle ge en koppling som redan finns.
 export function updateRelation(galaxy, relationId, changes) {
-  const allowed = {};
+  const current = galaxy.relations.find((r) => r.id === relationId);
+  if (!current) throw new Error('Kopplingen finns inte längre.');
+  const next = { ...current };
   for (const key of ['type', 'motivation', 'signature']) {
-    if (key in changes) allowed[key] = String(changes[key]).trim();
+    if (key in changes) next[key] = String(changes[key] ?? '').trim();
   }
-  return {
-    ...galaxy,
-    relations: galaxy.relations.map((r) => (r.id === relationId ? { ...r, ...allowed, updated: today() } : r)),
-  };
+  if ('from' in changes || 'to' in changes) {
+    const from = changes.from ?? current.from;
+    const to = changes.to ?? current.to;
+    const same = new Set([current.from, current.to]);
+    if (!same.has(from) || !same.has(to) || from === to) throw new Error('Bara riktningen kan ändras, inte böckerna.');
+    next.from = from;
+    next.to = to;
+  }
+  if (!getRelationType(galaxy, next.type)) throw new Error('Okänd typ av koppling.');
+  if (!next.motivation) throw new Error('Kopplingen behöver en motivering.');
+  if (!next.signature) throw new Error('Kopplingen behöver en signatur.');
+  const key = relationKey(galaxy, next);
+  if (galaxy.relations.some((r) => r.id !== relationId && relationKey(galaxy, r) === key)) {
+    throw new Error('Det finns redan en sådan koppling mellan böckerna.');
+  }
+  next.updated = today();
+  return { ...galaxy, relations: galaxy.relations.map((r) => (r.id === relationId ? next : r)) };
 }
 
 export function removeRelation(galaxy, relationId) {
@@ -311,6 +328,35 @@ export function untagBook(galaxy, bookId, tagId) {
   return { ...galaxy, bookTags, tags: galaxy.tags.filter((t) => used.has(t.id)) };
 }
 
+// Byter namn på en tagg. Finns redan en tagg med det nya namnet slås de ihop.
+export function renameTag(galaxy, tagId, newName) {
+  const name = String(newName ?? '').trim();
+  if (!name) throw new Error('Taggen behöver ett namn.');
+  if (!galaxy.tags.some((t) => t.id === tagId)) throw new Error('Taggen finns inte längre.');
+  const key = normalizeTagName(name);
+  const other = galaxy.tags.find((t) => t.id !== tagId && normalizeTagName(t.name) === key);
+  if (!other) return { ...galaxy, tags: galaxy.tags.map((t) => (t.id === tagId ? { ...t, name } : t)) };
+  const seen = new Set();
+  const bookTags = galaxy.bookTags
+    .map((bt) => (bt.tag === tagId ? { ...bt, tag: other.id } : bt))
+    .filter((bt) => {
+      const k = `${bt.book}|${bt.tag}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  return { ...galaxy, tags: galaxy.tags.filter((t) => t.id !== tagId), bookTags };
+}
+
+// Tar bort taggen från alla böcker.
+export function removeTag(galaxy, tagId) {
+  return {
+    ...galaxy,
+    tags: galaxy.tags.filter((t) => t.id !== tagId),
+    bookTags: galaxy.bookTags.filter((bt) => bt.tag !== tagId),
+  };
+}
+
 export function booksWithTag(galaxy, tagId) {
   return new Set(galaxy.bookTags.filter((bt) => bt.tag === tagId).map((bt) => bt.book));
 }
@@ -332,4 +378,26 @@ export function setPositions(galaxy, positions) {
       return p ? { ...b, position: p } : b;
     }),
   };
+}
+
+// --- Sökning i galaxen ------------------------------------------------
+
+// Böcker i galaxen vars titel, författare eller ISBN matchar frågan.
+// Alla ord i frågan måste finnas med. Titlar som börjar med frågan kommer först.
+export function findBooks(galaxy, query, limit = 8) {
+  const words = normalizeTagName(query).split(' ').filter(Boolean);
+  const isbn = normalizeIsbn(query);
+  if (!words.length) return [];
+  const hits = [];
+  for (const book of galaxy.books) {
+    const title = normalizeTagName(book.title);
+    const text = `${title} ${normalizeTagName(book.author)}`;
+    const isbnHit = isbn.length >= 10 && book.isbns.includes(isbn);
+    if (!isbnHit && !words.every((w) => text.includes(w))) continue;
+    hits.push({ book, score: isbnHit ? 0 : title.startsWith(words.join(' ')) ? 1 : 2 });
+  }
+  return hits
+    .sort((a, b) => a.score - b.score || a.book.title.localeCompare(b.book.title, 'sv'))
+    .slice(0, limit)
+    .map((h) => h.book);
 }

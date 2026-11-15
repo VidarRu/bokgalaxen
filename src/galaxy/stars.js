@@ -177,6 +177,7 @@ export function createStars() {
         attrs.radius.setX(i, node.radius);
         attrs.phase.setX(i, node.phase);
       });
+      if (!nodes.length) return; // tom galax, till exempel i byggläget innan första boken
       attrs.color.needsUpdate = true;
       attrs.radius.needsUpdate = true;
       attrs.phase.needsUpdate = true;

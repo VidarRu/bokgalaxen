@@ -7,17 +7,30 @@ Senast uppdaterad 2026-11-14.
 - [x] **Steg 1: Teknisk spik.** Libris går att anropa direkt från webbläsaren.
 - [x] **Steg 2: Datamodell och lagring.** Egna id, export, import, sammanslagning, påminnelse om export, startfil.
 - [x] **Steg 3: Galaxen.** Stjärnor, ljusstråk, tända taggar, glöd, kameraflygningar, sparade positioner.
+- [x] **Steg 4: Byggläget.** Sök i Libris, lägg in böcker, koppla ihop dem med typ, riktning, motivering och signatur, sätt taggar, ändra, ta bort och ångra.
 
 ## Nästa steg
 
-**Steg 4: Byggläget.** Körs i en ny session med Opus. Läs avsnitten "Användarflöden" och "Arbetsordning" i `docs/PLAN.md`.
+**Steg 5: Utforskaläget.** Körs i en ny session med Opus. Läs avsnitten "Användarflöden" (Besökaren utforskar och Tom träff) och "Arbetsordning" i `docs/PLAN.md`.
 
 Det som redan finns att bygga på:
 
-- `searchBooks(fråga)` i `src/libris/index.js` ger träffar som går rakt in i `addBook()` i `src/data/model.js`. Fältet `suggestedGenre` är Libris förslag på genre. Bibliotekarien väljer.
-- `store.update((galax) => nyGalax)` i `src/data/store.js` sparar, markerar att det finns ändringar som inte är exporterade och ritar om galaxen. Nya böcker hamnar nära sina grannar, och resten av galaxen ligger still.
-- Ångra finns inte än. Enklast är att spara föregående galax i `store.update` och lägga till `store.undo()`.
-- Bokkortet i `src/main.js` är en enkel första version. Steg 5 bygger ut det (sökning, tom träff, guidad startpunkt, länk till katalogen).
+- `findBooks(galax, fråga)` i `src/data/model.js` söker bland böckerna i galaxen på titel, författare och ISBN. Byggläget använder den, och besökarens sökning kan använda samma.
+- Bokkortet i `src/main.js` (`renderCard`) är en enkel första version. Steg 5 bygger ut det: sökning, tom träff, guidad startpunkt och länken till katalogen.
+- `el()` och `cover()` ligger i `src/ui/dom.js` och delas av bokkortet och byggläget.
+- Läget styrs av `setMode('utforska' | 'bygga')` i `src/main.js`. Adressen `#bygga` öppnar byggläget direkt.
+
+## Hur byggläget fungerar (steg 4)
+
+- Knapparna **Utforska | Bygga** längst ner till höger byter läge. Byggläget är ett formulär i en panel till höger (på mobil längst ner). Koden ligger i `src/build/builder.js`.
+- **Söka:** en sökning visar först böcker som redan finns i galaxen, sedan träffar från Libris. Träffar från Libris visar år och antal utgåvor, och märks "Finns redan i galaxen" när verket redan är en stjärna. Väljer man en sådan läggs den nya utgåvans ISBN och Libris-id till den befintliga stjärnan.
+- **Ny bok:** bibliotekarien väljer genre. Libris förslag är förvalt och står utskrivet ("Libris föreslår Roman. Du väljer.").
+- **Bokens sida:** genre, kopplingar (med Ändra och Ta bort), taggar (lägg till, ta bort) och Ta bort boken ur galaxen. Galaxen flyger till boken. Klickar man på en stjärna i byggläget öppnas den bokens sida.
+- **Koppla ihop:** sök fram den andra boken, välj typ (med en kort hjälptext per typ), se riktningen i klartext och byt håll med en knapp, skriv motivering (högst 400 tecken) och signatur. Signaturen minns webbläsaren åt bibliotekarien. Saknas motivering eller signatur visas ett fel och markören hamnar i fältet. En koppling som redan finns blir ingen dubblett.
+- **Taggar:** under "Alla taggar i galaxen" på startsidan kan en tagg byta namn eller tas bort från alla böcker. Byter man namn till en tagg som redan finns slås de ihop.
+- **Ångra:** knappen Ångra överst i panelen, eller Ctrl+Z (Cmd+Z på Mac) utanför textfälten. Upp till 30 steg. Raden "Senaste ändringen: …" säger vad som ångras. Ångra finns bara tills sidan laddas om. Stjärnorna behåller sina platser när man ångrar.
+- **Påminnelsen om export** ligger i panelen i byggläget, så att den inte täcker formuläret.
+- I byggläget visas alltid den riktiga galaxen, även när den är tom. Testgalaxen syns bara i utforskaläget. Med `?test=` i adressen går byggläget inte att öppna, så att ingen bygger på platshållare.
 
 ## Vad spiken visade (steg 1)
 
@@ -49,19 +62,24 @@ När Vidar har byggt de första böckerna exporteras de och läggs i `public/sta
 
 ## Kontrollerat
 
-- `npm test`: 14 tester för datamodell, sammanslagning, lagring och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
+- `npm test`: 18 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
+- Byggläget i en riktig webbläsare mot riktiga Libris (2026-11-14): sök, lägg in en bok, sätt tagg, koppla ihop med en ny bok, fel när motiveringen saknas, byt håll, spara, ändra, ta bort, ångra med knappen och med Ctrl+Z, byta läge med en bok vald, omladdning (galaxen och byggläget finns kvar), mobilstorlek. Inga fel i konsolen.
 - I en riktig webbläsare: klick på en stjärna, bokkort, Escape, import, påminnelse om export, export, sparade positioner efter omladdning (ingen stjärna flyttade sig), ny bok utan att resten flyttas, minskad rörelse, mobilstorlek.
-- Skärmbilder finns i `docs/skarmbilder/`.
+- Skärmbilder finns i `docs/skarmbilder/` (steg 3 och steg 4).
 
 ## Inte kontrollerat
 
 - Bildhastigheten på en riktig dator eller telefon. Molnmiljön har inget grafikkort. Prova `?test=320` på en vanlig dator och på en mobil.
 - Skärmläsare och tangentbordsnavigering i själva 3D-bilden. Det hör till listvyn i steg 6.
+- Byggläget med en riktig skärmläsare. Formuläret använder vanliga fält med etiketter, felmeddelanden läses upp och markören flyttas till rubriken när vyn byts, men det är inte provat med NVDA eller VoiceOver.
 
 ## Kända brister
 
 - En ny bok som kopplas till en bok mitt i ett tätt kluster kan hamna en bit utanför klustret, med ett långt stråk. "Lägg om galaxen" rättar till det.
 - Titlar på mobil kan hamna bakom rubriken. Mobilen finputsas i steg 6.
+- **Med bara två eller tre böcker ligger stjärnorna så tätt att stråket knappt syns.** Det märks direkt när de första böckerna byggs (se `docs/skarmbilder/steg4-bok.png`). Avståndet styrs av kraftlayouten från steg 3 (`graph.d3Force('link').distance(34)` i `src/galaxy/galaxy.js`). Det rättar till sig när galaxen växer. Ska det ändras är det ett beslut om bildspråket, inte om byggläget.
+- Libris sökning blandar in recensioner och böcker *om* en bok (till exempel "Recension av: Martinson, Harry: Aniara"). Bibliotekarien ser författare och år och väljer rätt, men listan kan bli lång.
+- Bibliotekarien kan inte ändra titel eller författare. De kommer från Libris.
 
 ## Öppna frågor som är avgjorda
 
