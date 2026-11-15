@@ -24,6 +24,7 @@ export function groupEditions(editions) {
           ...edition,
           isbns: [...new Set(edition.isbns.map(normalizeIsbn))],
           editions: 1,
+          holdings: edition.holdings ?? 0,
         },
       });
       continue;
@@ -40,6 +41,7 @@ export function groupEditions(editions) {
     b.year = b.year && edition.year ? Math.min(b.year, edition.year) : b.year ?? edition.year;
     b.author = b.author || edition.author;
     b.editions += 1;
+    b.holdings = (b.holdings ?? 0) + (edition.holdings ?? 0);
   }
   return groups.map((g) => g.book);
 }
@@ -65,18 +67,36 @@ async function withTimeout(run, signal) {
 // med familyName bara utgåvor där någon med det efternamnet medverkar. Det
 // klarar bara XL, så då provas inte Xsearch. limit och offset styr hur många
 // utgåvor som hämtas och varifrån, för den som behöver bläddra.
-export async function searchBooks(query, { signal, fetchImpl, language, familyName, limit, offset } = {}) {
+//
+// filters och sort (se searchXl) och skip används av scripts/libris-urval.
+// skip är en funktion som får en utgåva och svarar true om den ska bort,
+// till exempel en recension. Alla tre klarar bara XL. Varje bok i svaret har
+// också holdings: hur många bibliotek som har den (summerat över utgåvorna).
+export async function searchBooks(
+  query,
+  { signal, fetchImpl, language, familyName, limit, offset, filters, sort, skip } = {},
+) {
   const q = String(query ?? '').trim();
   if (!q) return { books: [], source: null };
   const options = fetchImpl ? { fetchImpl } : {};
-  const xlOptions = { ...options, language, familyName, ...(limit ? { limit } : {}), ...(offset ? { offset } : {}) };
+  const xlOptions = {
+    ...options,
+    language,
+    familyName,
+    filters,
+    sort,
+    ...(limit ? { limit } : {}),
+    ...(offset ? { offset } : {}),
+  };
 
   try {
     const editions = await withTimeout((s) => searchXl(q, { ...xlOptions, signal: s }), signal);
-    return { books: groupEditions(editions), source: 'xl' };
+    return { books: groupEditions(skip ? editions.filter((e) => !skip(e)) : editions), source: 'xl' };
   } catch (error) {
     if (signal?.aborted) throw error;
-    if (language || familyName) throw new Error('Libris XL svarar inte just nu. Försök igen om en stund.');
+    if (language || familyName || filters || sort || skip) {
+      throw new Error('Libris XL svarar inte just nu. Försök igen om en stund.');
+    }
   }
   try {
     const editions = await withTimeout((s) => searchXsearch(q, { ...options, signal: s }), signal);
