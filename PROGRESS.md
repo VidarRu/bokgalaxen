@@ -9,11 +9,12 @@ Senast uppdaterad 2026-11-15.
 - [x] **Steg 3: Galaxen.** Stjärnor, ljusstråk, tända taggar, glöd, kameraflygningar, sparade positioner.
 - [x] **Steg 4: Byggläget.** Sök i Libris, lägg in böcker, koppla ihop dem med typ, riktning, motivering och signatur, sätt taggar, ändra, ta bort och ångra.
 
+- [x] **Mellansteg: inloggning för redaktörer.** Galaxen delas via servern (Vercel + Neon). Redaktörer loggar in och ser och ändrar bara sina egna boktips. Administratören skapar konton. Se avsnittet nedan och `docs/VERCEL.md`.
 - [x] **Mellansteg: import från Goodreads.** Vidars Goodreads-lista är inläst med svenska utgåvor från Libris. Den ligger i `public/startgalax.json` och ersätter testgalaxen. Se avsnittet nedan.
 
 ## Nästa steg
 
-**Publicera på Vercel**, så att demon går att visa. Bestäm först vem som får använda byggläget (öppen fråga i `docs/PLAN.md`). Därefter fler lösa stjärnor från Libris och steg 5.
+**Publicera på Vercel** enligt `docs/VERCEL.md`: skapa projektet, koppla på Neon, lägg in `SESSION_SECRET`, `ADMIN_USERNAME` och `ADMIN_PASSWORD`, publicera igen och logga in. Därefter fler lösa stjärnor från Libris och steg 5.
 
 **Steg 5: Utforskaläget.** Körs i en ny session med Opus. Läs avsnitten "Användarflöden" (Besökaren utforskar och Tom träff) och "Arbetsordning" i `docs/PLAN.md`.
 
@@ -23,6 +24,22 @@ Det som redan finns att bygga på:
 - Bokkortet i `src/main.js` (`renderCard`) är en enkel första version. Steg 5 bygger ut det: sökning, tom träff, guidad startpunkt och länken till katalogen.
 - `el()` och `cover()` ligger i `src/ui/dom.js` och delas av bokkortet och byggläget.
 - Läget styrs av `setMode('utforska' | 'bygga')` i `src/main.js`. Adressen `#bygga` öppnar byggläget direkt.
+
+## Inloggning och delad galax (2026-11-15)
+
+Galaxen sparas inte längre bara i webbläsaren. När serverfunktionerna finns (på Vercel, eller lokalt med `npm run dev`) delas den av alla.
+
+- **Serverfunktioner** i `api/`: `galaxy` (läsa och ändra), `login`, `logout`, `me` (vem är inloggad, signatur, byta lösenord) och `users` (konton, bara administratören). Hjälpkoden ligger i `server/`.
+- **Databas:** Neon Postgres via Vercel (`DATABASE_URL`). Två tabeller: `users` och `galaxy` (hela galaxen som ett JSON-dokument med ett versionsnummer, så att två samtidiga ändringar inte skriver över varandra). Utan `DATABASE_URL` sparas allt i en fil i `.data/`, för lokal utveckling och testerna. Nytt paket: `@neondatabase/serverless`.
+- **Ändringspaket** (`src/data/patch.js`): byggläget gör ändringen i webbläsaren som förut, och skickar sedan bara skillnaden till servern. Samma kod kontrollerar behörigheten i webbläsaren (för ett snabbt felmeddelande) och på servern (som bestämmer). Ångra skickar en ändring tillbaka.
+- **Konton:** användarnamn och lösenord. Lösenordet behöver minst 6 tecken, stor och liten bokstav, en siffra och ett specialtecken (`src/data/password.js`). Lösenord sparas som scrypt-hash. Inloggningen är en signerad kaka (HttpOnly, 30 dagar). Byts lösenordet slutar gamla inloggningar att gälla. Kontot låses i 15 minuter efter 8 felaktiga försök.
+- **Första kontot** skapas när man loggar in med `ADMIN_USERNAME` och `ADMIN_PASSWORD`, och bara om det inte finns några konton.
+- **Behörigheter:** en redaktör ser och ändrar bara sina egna boktips i byggläget. Allas boktips syns i utforskaläget. Redaktörer kan lägga till böcker och sätta taggar. Genre och borttagning gäller bara böcker man själv har lagt till och som saknar andras boktips. Administratören får allt, även att byta namn på taggar, importera filer och hantera konton. Tabellen står i `docs/VERCEL.md`.
+- **Ägare:** kopplingar har fältet `owner` och böcker `addedBy` (användarens id). Importerade kopplingar har ingen ägare, så bara administratören kan ändra dem.
+- **Bli redaktör:** knappen öppnar ett färdigt mejl till Vidars adress (`src/config.js`).
+- **Utan server** (`npm run preview`, en statisk sida) fungerar allt som förut: galaxen sparas i webbläsaren, med export och påminnelse, och byggläget är öppet.
+- Kontrollerat i en riktig webbläsare mot den lokala servern: fel lösenord, inloggning som administratör, skapa en redaktör (svagt lösenord avvisas), logga ut och in som redaktören, bara egna boktips syns, genre låst och ingen borttagning för andras böcker, nytt boktips sparas på servern med rätt ägare, signaturen sparas på kontot, ångra tas bort även på servern, ny bok från Libris går att ändra, byte till för svagt lösenord avvisas. Skärmbilder: `docs/skarmbilder/inloggning.png`, `redaktorer.png`, `redaktor-bok.png`.
+- **Inte kontrollerat:** själva publiceringen på Vercel med Neon. Koden för Neon följer paketets dokumentation men har inte körts mot en riktig databas.
 
 ## Importen från Goodreads (2026-11-15)
 
@@ -90,7 +107,7 @@ När Vidar har byggt de första böckerna exporteras de och läggs i `public/sta
 
 ## Kontrollerat
 
-- `npm test`: 21 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
+- `npm test`: 42 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
 - Byggläget i en riktig webbläsare mot riktiga Libris (2026-11-14): sök, lägg in en bok, sätt tagg, koppla ihop med en ny bok, fel när motiveringen saknas, byt håll, spara, ändra, ta bort, ångra med knappen och med Ctrl+Z, byta läge med en bok vald, omladdning (galaxen och byggläget finns kvar), mobilstorlek. Inga fel i konsolen.
 - I en riktig webbläsare: klick på en stjärna, bokkort, Escape, import, påminnelse om export, export, sparade positioner efter omladdning (ingen stjärna flyttade sig), ny bok utan att resten flyttas, minskad rörelse, mobilstorlek.
 - Skärmbilder finns i `docs/skarmbilder/` (steg 3 och steg 4).
@@ -118,5 +135,7 @@ När Vidar har byggt de första böckerna exporteras de och läggs i `public/sta
 Övriga öppna frågor står kvar i `docs/PLAN.md`.
 
 ## Molnmiljön
+
+Lokalt med inloggning: `ADMIN_USERNAME=vidar ADMIN_PASSWORD='Hemligt!1' npm run dev`. Allt sparas då i `.data/`.
 
 Sessioner i Claude Code på webben behöver miljön **bokgalaxen**, som släpper igenom `libris.kb.se` och `openlibrary.org`. Standardmiljön blockerar dem.

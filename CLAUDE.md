@@ -7,7 +7,7 @@ Visuell prototyp av en bibliotekariedriven boktipstjänst. Böcker är stjärnor
 - `docs/PLAN.md`: hela planen. Läs bara avsnittet för steget du arbetar med.
 
 ## Stack
-Vite, 3d-force-graph och Three.js. Bokdata från Libris (XL i första hand, Xsearch som reserv), via en egen modul. Lagring i webbläsaren med export, import och sammanslagning av JSON. Vercel.
+Vite, 3d-force-graph och Three.js. Bokdata från Libris (XL i första hand, Xsearch som reserv), via en egen modul. Vercel med serverfunktioner i `api/` och Neon Postgres för konton och den delade galaxen (se `docs/VERCEL.md`). Utan server sparas galaxen i webbläsaren, med export, import och sammanslagning av JSON.
 
 ## Regler som alltid gäller
 - Inga AI-genererade kopplingar eller motiveringar. Allt innehåll i galaxen kommer från människor.
@@ -23,6 +23,6 @@ Vite, 3d-force-graph och Three.js. Bokdata från Libris (XL i första hand, Xsea
 - Vidar är inte utvecklare. Förklara terminalkommandon och Git-steg i klarspråk, ett i taget.
 
 ## Kommandon
-- `npm run dev`: startar sidan lokalt.
-- `npm test`: kör testerna för datamodell, sammanslagning och Libris-tolkning.
+- `npm run dev`: startar sidan lokalt, med serverfunktionerna och en lokal fil som databas (`.data/`). Lägg till `ADMIN_USERNAME=… ADMIN_PASSWORD=…` före för att kunna logga in.
+- `npm test`: kör testerna för datamodell, sammanslagning, Libris-tolkning, behörigheter och serverfunktioner.
 - `npm run build`: bygger sidan för publicering.

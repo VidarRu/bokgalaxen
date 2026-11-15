@@ -3,6 +3,7 @@
 // Utforskaläget (steg 5) och listvyn (steg 6) byggs ovanpå det här.
 
 import { createStore, warnBeforeLeaving } from './data/store.js';
+import { remoteApi } from './data/remote.js';
 import { createTestGalaxy } from './data/testdata.js';
 import { relationsForBook, tagsForBook, degreeMap } from './data/model.js';
 import { describeMerge } from './data/merge.js';
@@ -14,7 +15,9 @@ import { el, cover } from './ui/dom.js';
 
 const $ = (id) => document.getElementById(id);
 
-const store = createStore();
+// Finns serverfunktionerna (Vercel, eller `npm run dev`) delas galaxen och
+// redaktörer loggar in. Annars sparas den i webbläsaren som förut.
+const store = createStore({ remote: remoteApi });
 const galaxy = createGalaxy($('galaxy'));
 window.bokgalaxen = { store, galaxy }; // för felsökning i webbläsarens konsol
 
@@ -174,9 +177,11 @@ galaxy.on('focus', (id) => {
   }
 });
 
+let relayoutRequested = false;
 galaxy.on('settled', (positions) => {
   // Testgalaxen sparas aldrig.
-  if (!showingTestData) store.savePositions(positions);
+  if (!showingTestData) store.savePositions(positions, { overwrite: relayoutRequested });
+  relayoutRequested = false;
 });
 
 // --- Byggläget -----------------------------------------------------------
@@ -267,7 +272,10 @@ function pickFile(mode) {
 }
 $('merge-button').addEventListener('click', () => pickFile('merge'));
 $('replace-button').addEventListener('click', () => {
-  if (store.galaxy.books.length === 0 || confirm('Galaxen i den här webbläsaren ersätts av filen. Vill du fortsätta?')) pickFile('replace');
+  const question = store.shared
+    ? 'Hela den delade galaxen ersätts av filen, för alla redaktörer. Vill du fortsätta?'
+    : 'Galaxen i den här webbläsaren ersätts av filen. Vill du fortsätta?';
+  if (store.galaxy.books.length === 0 || confirm(question)) pickFile('replace');
 });
 $('file-input').addEventListener('change', async (event) => {
   const file = event.target.files[0];
@@ -286,6 +294,7 @@ $('file-input').addEventListener('change', async (event) => {
 
 $('relayout-button').addEventListener('click', () => {
   toggleMenu(false);
+  relayoutRequested = true;
   show({ relayout: true });
   say('Galaxen läggs om från början.');
 });
@@ -297,11 +306,29 @@ $('reset-button').addEventListener('click', async () => {
   say('Galaxen är återställd från startfilen.');
 });
 
+// I den delade galaxen kan bara administratören importera filer, och det
+// finns ingen startfil att börja om från.
+function updateFileMenu() {
+  const admin = !store.shared || Boolean(store.user?.isAdmin);
+  $('merge-button').hidden = !admin;
+  $('replace-button').hidden = !admin;
+  $('reset-button').hidden = store.shared;
+}
+
 // --- Start --------------------------------------------------------------
 
-store.subscribe(({ dirty, change }) => {
-  $('reminder').hidden = !dirty;
+store.subscribe(({ dirty, change, message }) => {
+  $('reminder').hidden = !dirty || store.shared;
   if (change === 'positions') return; // bara sparade positioner, inget nytt att rita
+  if (change === 'error') {
+    say(message);
+    return;
+  }
+  if (change === 'user') {
+    updateFileMenu();
+    if (mode === 'bygga') builder.refresh();
+    return;
+  }
   if (change === 'export') {
     if (mode === 'bygga') builder.refresh();
     return;
@@ -315,7 +342,8 @@ store.subscribe(({ dirty, change }) => {
 warnBeforeLeaving(store);
 
 await store.load();
-$('reminder').hidden = !store.dirty;
+$('reminder').hidden = !store.dirty || store.shared;
+updateFileMenu();
 renderLegend();
 if (location.hash === '#bygga') setMode('bygga', { announce: false });
 else show();

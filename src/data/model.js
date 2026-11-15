@@ -57,6 +57,8 @@ function cleanBook(b) {
     subjects: uniq(b.subjects).map(String),
     cover: b.cover ? String(b.cover) : null,
     position: cleanPosition(b.position),
+    // Redaktören som lade till boken. null = inlagd innan det fanns konton.
+    addedBy: b.addedBy ? String(b.addedBy) : null,
   };
 }
 
@@ -106,6 +108,9 @@ export function normalizeGalaxy(input) {
       type: r.type,
       motivation: String(r.motivation ?? '').trim(),
       signature: String(r.signature ?? '').trim(),
+      // Redaktören som äger boktipset. null = inlagt innan det fanns konton,
+      // och då kan bara administratören ändra det.
+      owner: r.owner ? String(r.owner) : null,
       created: String(r.created ?? today()),
       updated: String(r.updated ?? r.created ?? today()),
     }));
@@ -215,7 +220,7 @@ export function findRelation(galaxy, from, to, type) {
 
 // Svar: { galaxy, relation, created }. Finns samma koppling redan skapas
 // ingen dubblett, den befintliga lämnas tillbaka orörd.
-export function addRelation(galaxy, { from, to, type, motivation, signature }) {
+export function addRelation(galaxy, { from, to, type, motivation, signature, owner = null }) {
   if (from === to) throw new Error('En bok kan inte kopplas till sig själv.');
   const ids = new Set(galaxy.books.map((b) => b.id));
   if (!ids.has(from) || !ids.has(to)) throw new Error('Båda böckerna måste finnas i galaxen.');
@@ -233,6 +238,7 @@ export function addRelation(galaxy, { from, to, type, motivation, signature }) {
     type,
     motivation: motivation.trim(),
     signature: signature.trim(),
+    owner: owner ?? null,
     created: today(),
     updated: today(),
   };

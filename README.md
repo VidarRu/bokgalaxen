@@ -4,6 +4,7 @@ En visuell prototyp av en bibliotekariedriven boktipstjänst. Böcker är stjär
 
 - `docs/PLAN.md`: hela projektplanen.
 - `PROGRESS.md`: var projektet står just nu.
+- `docs/VERCEL.md`: så publiceras sidan på Vercel, med inloggning för redaktörer.
 
 ## Köra sidan på din egen dator
 
