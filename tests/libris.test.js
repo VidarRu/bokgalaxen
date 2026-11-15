@@ -65,3 +65,23 @@ test('genreförslag', () => {
   assert.equal(suggestGenre({ sab: ['Qb'] }), 'fakta');
   assert.equal(suggestGenre({}), null);
 });
+
+test('XL: en översättning har språk och originalets titel', () => {
+  const mars = JSON.parse(readFileSync(new URL('./fixtures/xl-ensam-pa-mars.json', import.meta.url)));
+  const book = parseXlItem(mars.items[0]);
+  assert.equal(book.title, 'Ensam på Mars');
+  assert.equal(book.author, 'Andy Weir');
+  assert.deepEqual(book.languages, ['swe']);
+  assert.deepEqual(book.originalTitles, ['The Martian']);
+});
+
+test('sökning på språk skickar språkfiltret till XL och provar inte Xsearch', async () => {
+  const urls = [];
+  const fetchImpl = async (url) => {
+    urls.push(String(url));
+    return response({}, false);
+  };
+  await assert.rejects(searchBooks('Weir Martian', { fetchImpl, language: 'swe' }));
+  assert.equal(urls.length, 1);
+  assert.ok(decodeURIComponent(urls[0]).includes('instanceOf.language.@id=https://id.kb.se/language/swe'));
+});

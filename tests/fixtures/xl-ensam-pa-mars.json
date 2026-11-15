@@ -1,0 +1,287 @@
+{
+ "note": "Riktigt svar från Libris XL 2026-11-15, nedbantat. Svensk översättning med originaltitel.",
+ "items": [
+  {
+   "@id": "https://libris.kb.se/3mfn552f4b3b6q4#it",
+   "@type": "PhysicalResource",
+   "hasTitle": [
+    {
+     "@type": "Title",
+     "mainTitle": "Ensam på Mars"
+    }
+   ],
+   "identifiedBy": [
+    {
+     "@type": "ISBN",
+     "qualifier": [
+      "inb."
+     ],
+     "value": "9789187441103"
+    }
+   ],
+   "publication": [
+    {
+     "year": "2015"
+    }
+   ],
+   "instanceOf": {
+    "@id": "https://libris.kb.se/k2bqg03sh3ksknkz#it",
+    "hasTitle": [
+     {
+      "@type": "Title",
+      "mainTitle": "Ensam på Mars"
+     }
+    ],
+    "contribution": [
+     {
+      "agent": {
+       "@type": "Person",
+       "givenName": "Andy",
+       "familyName": "Weir"
+      },
+      "role": {
+       "code": "aut",
+       "@type": "Role",
+       "meta": {
+        "mainEntity": {
+         "@id": "https://id.kb.se/relator/author"
+        },
+        "@type": "Record",
+        "@id": "https://libris.kb.se/01671gl323zxzzhh"
+       },
+       "@id": "https://id.kb.se/relator/author",
+       "prefLabelByLang": {
+        "sv": "Författare",
+        "en": "Author"
+       },
+       "sameAs": [
+        {
+         "@id": "https://id.kb.se/relator/aut"
+        }
+       ]
+      },
+      "@type": "PrimaryContribution"
+     },
+     {
+      "agent": {
+       "@type": "Person",
+       "givenName": "John-Henri",
+       "familyName": "Holmberg"
+      },
+      "role": [
+       {
+        "code": "trl",
+        "@type": "Role",
+        "meta": {
+         "mainEntity": {
+          "@id": "https://id.kb.se/relator/translator"
+         },
+         "@type": "Record",
+         "@id": "https://libris.kb.se/ml1gn37qp4wm68l5"
+        },
+        "@id": "https://id.kb.se/relator/translator",
+        "prefLabelByLang": {
+         "sv": "Översättare",
+         "en": "Translator"
+        },
+        "sameAs": [
+         {
+          "@id": "https://id.kb.se/relator/trl"
+         }
+        ]
+       }
+      ],
+      "@type": "Contribution"
+     }
+    ],
+    "category": [
+     {
+      "inScheme": {
+       "code": "saogf",
+       "@type": "GenreFormScheme",
+       "@id": "https://id.kb.se/term/saogf",
+       "titleByLang": {
+        "sv": "SAOGF - Genre och form"
+       }
+      },
+      "singularLabelByLang": {
+       "sv": "Roman",
+       "en": "Novel"
+      },
+      "@type": "GenreForm",
+      "meta": {
+       "mainEntity": {
+        "@id": "https://id.kb.se/term/saogf/Romaner"
+       },
+       "@type": "Record",
+       "@id": "https://libris.kb.se/jgvz6gc258ns5hp"
+      },
+      "prefLabel": "Romaner",
+      "inCollection": [
+       {
+        "code": "Skon",
+        "@type": "TermCollection",
+        "@id": "https://id.kb.se/term/skon",
+        "sameAs": [
+         {
+          "@id": "https://id.kb.se/term/Skon"
+         }
+        ]
+       },
+       {
+        "code": "identify",
+        "@type": "TermCollection",
+        "@id": "https://id.kb.se/term/div/identify"
+       }
+      ],
+      "@id": "https://id.kb.se/term/saogf/Romaner",
+      "prefLabelByLang": {
+       "en": "Novels"
+      },
+      "sameAs": [
+       {
+        "@id": "http://libris.kb.se/resource/auth/389072"
+       }
+      ]
+     },
+     {
+      "inScheme": {
+       "code": "saogf",
+       "@type": "GenreFormScheme",
+       "@id": "https://id.kb.se/term/saogf",
+       "titleByLang": {
+        "sv": "SAOGF - Genre och form"
+       }
+      },
+      "@type": "GenreForm",
+      "meta": {
+       "mainEntity": {
+        "@id": "https://id.kb.se/term/saogf/Science%20fiction"
+       },
+       "@type": "Record",
+       "@id": "https://libris.kb.se/khw06mp31jrmjc6"
+      },
+      "prefLabel": "Science fiction",
+      "inCollection": [
+       {
+        "code": "Skon",
+        "@type": "TermCollection",
+        "@id": "https://id.kb.se/term/skon",
+        "sameAs": [
+         {
+          "@id": "https://id.kb.se/term/Skon"
+         }
+        ]
+       }
+      ],
+      "@id": "https://id.kb.se/term/saogf/Science%20fiction",
+      "prefLabelByLang": {
+       "en": "Science fiction"
+      },
+      "sameAs": [
+       {
+        "@id": "http://libris.kb.se/resource/auth/365943"
+       }
+      ]
+     },
+     {
+      "code": "txt",
+      "inScheme": {
+       "code": "rda",
+       "@type": "ConceptScheme",
+       "@id": "https://id.kb.se/term/rda",
+       "titleByLang": {
+        "sv": "RDA-termer",
+        "en": "RDA Terms"
+       }
+      },
+      "@type": "ContentType",
+      "meta": {
+       "mainEntity": {
+        "@id": "https://id.kb.se/term/rda/Text"
+       },
+       "@type": "Record",
+       "@id": "https://libris.kb.se/pnpsnkg0r5b6x092"
+      },
+      "@id": "https://id.kb.se/term/rda/Text",
+      "prefLabelByLang": {
+       "sv": "Text",
+       "en": "Text"
+      },
+      "sameAs": [
+       {
+        "@id": "https://id.kb.se/term/rda/content/text"
+       },
+       {
+        "@id": "https://id.kb.se/term/rda/content/txt"
+       }
+      ]
+     }
+    ],
+    "classification": [
+     {
+      "code": "813.6",
+      "@type": "ClassificationDdc"
+     }
+    ],
+    "language": [
+     {
+      "code": "swe",
+      "@type": "Language",
+      "meta": {
+       "mainEntity": {
+        "@id": "https://id.kb.se/language/swe"
+       },
+       "@type": "Record",
+       "@id": "https://libris.kb.se/93lzl5lfc2l3hvc7"
+      },
+      "@id": "https://id.kb.se/language/swe",
+      "prefLabelByLang": {
+       "sv": "Svenska",
+       "en": "Swedish"
+      },
+      "sameAs": [
+       {
+        "@id": "https://id.kb.se/i18n/lang/sv"
+       }
+      ]
+     }
+    ],
+    "translationOf": [
+     {
+      "@type": "Work",
+      "language": [
+       {
+        "code": "eng",
+        "@type": "Language",
+        "meta": {
+         "mainEntity": {
+          "@id": "https://id.kb.se/language/eng"
+         },
+         "@type": "Record",
+         "@id": "https://libris.kb.se/zfpl8t8310mn9s2m"
+        },
+        "@id": "https://id.kb.se/language/eng",
+        "prefLabelByLang": {
+         "sv": "Engelska",
+         "en": "English"
+        },
+        "sameAs": [
+         {
+          "@id": "https://id.kb.se/i18n/lang/en"
+         }
+        ]
+       }
+      ],
+      "hasTitle": [
+       {
+        "@type": "Title",
+        "mainTitle": "The Martian."
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

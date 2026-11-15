@@ -1,6 +1,6 @@
 # Var projektet står
 
-Senast uppdaterad 2026-11-14.
+Senast uppdaterad 2026-11-15.
 
 ## Klart
 
@@ -9,7 +9,11 @@ Senast uppdaterad 2026-11-14.
 - [x] **Steg 3: Galaxen.** Stjärnor, ljusstråk, tända taggar, glöd, kameraflygningar, sparade positioner.
 - [x] **Steg 4: Byggläget.** Sök i Libris, lägg in böcker, koppla ihop dem med typ, riktning, motivering och signatur, sätt taggar, ändra, ta bort och ångra.
 
+- [x] **Mellansteg: import från Goodreads.** Vidars Goodreads-lista är inläst med svenska utgåvor från Libris. Den ligger i `public/startgalax.json` och ersätter testgalaxen. Se avsnittet nedan.
+
 ## Nästa steg
+
+**Publicera på Vercel**, så att demon går att visa. Bestäm först vem som får använda byggläget (öppen fråga i `docs/PLAN.md`). Därefter fler lösa stjärnor från Libris och steg 5.
 
 **Steg 5: Utforskaläget.** Körs i en ny session med Opus. Läs avsnitten "Användarflöden" (Besökaren utforskar och Tom träff) och "Arbetsordning" i `docs/PLAN.md`.
 
@@ -19,6 +23,29 @@ Det som redan finns att bygga på:
 - Bokkortet i `src/main.js` (`renderCard`) är en enkel första version. Steg 5 bygger ut det: sökning, tom träff, guidad startpunkt och länken till katalogen.
 - `el()` och `cover()` ligger i `src/ui/dom.js` och delas av bokkortet och byggläget.
 - Läget styrs av `setMode('utforska' | 'bygga')` i `src/main.js`. Adressen `#bygga` öppnar byggläget direkt.
+
+## Importen från Goodreads (2026-11-15)
+
+Ett mellansteg för att få en demo med riktiga böcker. Koden ligger i `scripts/goodreads/` och körs så här:
+
+```
+node scripts/goodreads/import.mjs sökväg/till/goodreads_library_export.csv
+```
+
+Skriptet skriver om `public/startgalax.json` och `docs/goodreads-import.md`. Svaren från Libris sparas i mappen `.goodreads/` (ligger inte i Git), så en ny körning tar några sekunder.
+
+- **Svenska utgåvor.** Varje bok söks i Libris med språkfiltret svenska, i tre steg: ISBN, sedan efternamn och titel, sedan alla svenska böcker där någon med författarens efternamn medverkar. En översättning känns igen på originaltiteln i Libris (`translationOf`). Libris-modulen har fått två nya val för det: `language` och `familyName`. De klarar bara XL, så då provas inte Xsearch.
+- **Resultat:** 417 böcker i exporten, 290 hittade på svenska, 264 stjärnor (vissa blev samma verk, till exempel en svensk samlingsvolym), 127 saknas. De flesta som saknas finns inte översatta, till exempel Dresden Files, senare Expanse-böcker och de sista Skivvärlden-böckerna. Listan står i `docs/goodreads-import.md`.
+- **Rättelser** för böcker vars svenska titel inte går att räkna ut (klassiker översatta från andra språk, svenska originalböcker som Vidar läst på engelska) står i `scripts/goodreads/rattelser.json`. Libris måste ändå bekräfta varje rättelse.
+- **Kopplingar (269)** bygger på det Vidar själv har angett på Goodreads, inte på något påhittat:
+  - *Samma betyg på Goodreads* (ny kopplingstyp, 187 stråk): böcker med samma betyg (3–5 stjärnor) och samma genre, kopplade i en ring så att varje bok får två grannar. Alla med alla hade blivit omkring 11 000 stråk. Betyg 1 och 2 ger inga kopplingar, eftersom galaxen tipsar om böcker.
+  - *För den som läser serien* (82 stråk): del för del enligt Goodreads serieuppgifter.
+  - Alla har signaturen **"Vidar (Goodreads)"**, så att de är lätta att hitta och ta bort när riktiga kopplingar finns.
+- **Taggar** är bokens genre, enligt Libris förslag. Inga taggar från Vidars hyllor.
+- 52 böcker har inga kopplingar och ligger som lösa stjärnor.
+- Skärmbild: `docs/skarmbilder/goodreads-galax.png`.
+
+Att tänka på: undertiteln på sidan säger "Varje ljusstråk har en bibliotekarie dragit". Det stämmer inte helt för importerade kopplingar. Bokkortet visar signaturen och motiveringen, så det framgår där.
 
 ## Hur byggläget fungerar (steg 4)
 
@@ -62,7 +89,7 @@ När Vidar har byggt de första böckerna exporteras de och läggs i `public/sta
 
 ## Kontrollerat
 
-- `npm test`: 18 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
+- `npm test`: 20 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
 - Byggläget i en riktig webbläsare mot riktiga Libris (2026-11-14): sök, lägg in en bok, sätt tagg, koppla ihop med en ny bok, fel när motiveringen saknas, byt håll, spara, ändra, ta bort, ångra med knappen och med Ctrl+Z, byta läge med en bok vald, omladdning (galaxen och byggläget finns kvar), mobilstorlek. Inga fel i konsolen.
 - I en riktig webbläsare: klick på en stjärna, bokkort, Escape, import, påminnelse om export, export, sparade positioner efter omladdning (ingen stjärna flyttade sig), ny bok utan att resten flyttas, minskad rörelse, mobilstorlek.
 - Skärmbilder finns i `docs/skarmbilder/` (steg 3 och steg 4).
