@@ -70,8 +70,18 @@ export function parseXlItem(item) {
     .filter(Boolean)
     .map((t) => String(t).replace(/[\s.]+$/, '').trim());
 
+  // Det här används av urvalsskriptet (scripts/libris-urval) för att hoppa över
+  // det som inte är en bok att läsa. Sökningen i byggläget påverkas inte.
+  const everyLabel = [...categories, ...asList(item.category)].map(label).filter(Boolean);
+  const titleText = String(title).trim();
+  const aboutBook = asList(work.subject).some(
+    (s) => s && typeof s === 'object' && (s['@type'] === 'Work' || s['@type'] === 'Instance' || s.hasTitle || s.instanceOf),
+  );
+  // Antal bibliotek som har boken. Ett grovt mått på hur spridd den är.
+  const holdings = Number(item.reverseLinks?.totalItemsByRelation?.itemOf) || 0;
+
   return {
-    title: String(title).trim(),
+    title: titleText,
     author: author ? String(author).trim() : '',
     year: years.length ? Math.min(...years) : null,
     isbns,
@@ -84,6 +94,10 @@ export function parseXlItem(item) {
     suggestedGenre: suggestGenre({ genreForms, sab, audience }),
     cover: null, // Libris har omslagsbilder, men rättigheterna är inte klarlagda. Se PROGRESS.md.
     isText: contentTypes.length === 0 || contentTypes.includes('Text'),
+    holdings,
+    isReview: /recension|anmälan/i.test(everyLabel.join(' | ')) || /^(recension|anmälan) av\b/i.test(titleText),
+    isAudio: /ljudbok|talbok|talat ord|ljudupptagning|ljudfil/i.test(everyLabel.join(' | ')),
+    isAboutBook: aboutBook,
     source: 'xl',
   };
 }
@@ -91,11 +105,21 @@ export function parseXlItem(item) {
 // language är en språkkod från id.kb.se, till exempel 'swe'. Då visas bara
 // utgåvor på det språket. familyName visar bara utgåvor där någon med det
 // efternamnet har medverkat (författare, men också översättare).
-export async function searchXl(query, { limit = 12, offset = 0, language, familyName, signal, fetchImpl = fetch } = {}) {
+//
+// filters är fler filter som den är: { 'publication.year': 2020,
+// 'instanceOf.category.@id': 'https://id.kb.se/term/saogf/Romaner' }.
+// sort är ett fält med minus framför för fallande ordning, till exempel
+// '-reverseLinks.totalItems' (flest bibliotek först) eller 'publication.year'.
+export async function searchXl(
+  query,
+  { limit = 12, offset = 0, language, familyName, filters, sort, signal, fetchImpl = fetch } = {},
+) {
   const params = new URLSearchParams({ q: query, '@type': 'Instance', _limit: String(limit) });
   if (offset) params.set('_offset', String(offset));
   if (language) params.set('instanceOf.language.@id', `https://id.kb.se/language/${language}`);
   if (familyName) params.set('instanceOf.contribution.agent.familyName', familyName);
+  for (const [key, value] of Object.entries(filters ?? {})) params.set(key, String(value));
+  if (sort) params.set('_sort', sort);
   const response = await fetchImpl(`${ENDPOINT}?${params}`, {
     signal,
     headers: { Accept: 'application/ld+json' },
