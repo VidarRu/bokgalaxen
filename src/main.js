@@ -5,6 +5,7 @@
 import { createStore, warnBeforeLeaving } from './data/store.js';
 import { remoteApi } from './data/remote.js';
 import { createTestGalaxy } from './data/testdata.js';
+import { createDemoGalaxy } from './data/demodata.js';
 import { relationsForBook, tagsForBook, degreeMap } from './data/model.js';
 import { describeMerge } from './data/merge.js';
 import { GENRES, getGenre } from './data/genres.js';
@@ -25,6 +26,14 @@ let data = null; // galaxen som visas just nu
 let showingTestData = false;
 let mode = 'utforska'; // 'utforska' | 'bygga'
 const testParam = Number.parseInt(new URLSearchParams(location.search).get('test') ?? '', 10);
+// ?demo visar den riktiga galaxen med slumpade kopplingar (src/data/demodata.js).
+const demoParam = new URLSearchParams(location.search).has('demo');
+let demoCache = { source: null, galaxy: null };
+
+function demoGalaxy() {
+  if (demoCache.source !== store.galaxy) demoCache = { source: store.galaxy, galaxy: createDemoGalaxy(store.galaxy) };
+  return demoCache.galaxy;
+}
 
 function say(message) {
   $('status').textContent = message;
@@ -40,14 +49,18 @@ function show({ relayout = false } = {}) {
   const empty = store.galaxy.books.length === 0;
 
   // I byggläget visas alltid den riktiga galaxen, även när den är tom.
-  showingTestData = Number.isFinite(testCount) || (empty && mode === 'utforska');
-  data = showingTestData ? createTestGalaxy(Number.isFinite(testCount) ? Math.max(1, Math.min(testCount, 2000)) : 160) : store.galaxy;
+  const showingDemo = demoParam && !Number.isFinite(testCount) && store.galaxy.books.length > 1;
+  showingTestData = showingDemo || Number.isFinite(testCount) || (empty && mode === 'utforska');
+  if (showingDemo) data = demoGalaxy();
+  else data = showingTestData ? createTestGalaxy(Number.isFinite(testCount) ? Math.max(1, Math.min(testCount, 2000)) : 160) : store.galaxy;
 
   const notice = $('test-notice');
   notice.hidden = !showingTestData;
-  notice.textContent = empty
-    ? 'Den riktiga galaxen är tom än. Det här är en testgalax med platshållare, inga riktiga böcker eller boktips.'
-    : 'Testgalax med platshållare, inga riktiga böcker eller boktips.';
+  notice.textContent = showingDemo
+    ? 'Demo: böckerna är riktiga, men många av kopplingarna är slumpade för att visa hur galaxen kan se ut. De har signaturen "Demo (slumpad)" och sparas inte.'
+    : empty
+      ? 'Den riktiga galaxen är tom än. Det här är en testgalax med platshållare, inga riktiga böcker eller boktips.'
+      : 'Testgalax med platshållare, inga riktiga böcker eller boktips.';
 
   if (relayout) galaxy.relayout(data);
   else galaxy.setGalaxy(data);
@@ -179,7 +192,7 @@ galaxy.on('focus', (id) => {
 
 let relayoutRequested = false;
 galaxy.on('settled', (positions) => {
-  // Testgalaxen sparas aldrig.
+  // Testgalaxen och demon sparas aldrig.
   if (!showingTestData) store.savePositions(positions, { overwrite: relayoutRequested });
   relayoutRequested = false;
 });
@@ -191,6 +204,10 @@ const builder = createBuilder({ root: $('builder'), store, galaxy, say, onExport
 function setMode(next, { announce = true } = {}) {
   if (next === 'bygga' && Number.isFinite(testParam)) {
     say('Byggläget fungerar inte i testgalaxen. Ta bort ?test ur adressen.');
+    return;
+  }
+  if (next === 'bygga' && demoParam) {
+    say('Byggläget fungerar inte i demon. Ta bort ?demo ur adressen.');
     return;
   }
   if (next === mode) return;

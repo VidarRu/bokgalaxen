@@ -1,6 +1,6 @@
 # Var projektet står
 
-Senast uppdaterad 2026-11-15.
+Senast uppdaterad 2026-11-19.
 
 ## Klart
 
@@ -11,6 +11,7 @@ Senast uppdaterad 2026-11-15.
 
 - [x] **Mellansteg: inloggning för redaktörer.** Galaxen delas via servern (Vercel + Neon). Redaktörer loggar in och ser och ändrar bara sina egna boktips. Administratören skapar konton. Se avsnittet nedan och `docs/VERCEL.md`.
 - [x] **Mellansteg: urval från Libris.** 400 lösa stjärnor i `docs/libris-urval.json`, redo att slås ihop. Se avsnittet nedan.
+- [x] **Mellansteg: demo med slumpade kopplingar.** `?demo` i adressen visar den riktiga galaxen där varje bok har minst en koppling. Sparas aldrig. Se avsnittet nedan.
 - [x] **Mellansteg: import från Goodreads.** Vidars Goodreads-lista är inläst med svenska utgåvor från Libris. Den ligger i `public/startgalax.json` och ersätter testgalaxen. Se avsnittet nedan.
 
 ## Nästa steg
@@ -41,6 +42,16 @@ Galaxen sparas inte längre bara i webbläsaren. När serverfunktionerna finns (
 - **Utan server** (`npm run preview`, en statisk sida) fungerar allt som förut: galaxen sparas i webbläsaren, med export och påminnelse, och byggläget är öppet.
 - Kontrollerat i en riktig webbläsare mot den lokala servern: fel lösenord, inloggning som administratör, skapa en redaktör (svagt lösenord avvisas), logga ut och in som redaktören, bara egna boktips syns, genre låst och ingen borttagning för andras böcker, nytt boktips sparas på servern med rätt ägare, signaturen sparas på kontot, ångra tas bort även på servern, ny bok från Libris går att ändra, byte till för svagt lösenord avvisas. Skärmbilder: `docs/skarmbilder/inloggning.png`, `redaktorer.png`, `redaktor-bok.png`.
 - **Inte kontrollerat:** själva publiceringen på Vercel med Neon. Koden för Neon följer paketets dokumentation men har inte körts mot en riktig databas.
+
+## Demo med slumpade kopplingar (2026-11-19)
+
+Vidar vill kunna visa andra hur galaxen kan se ut när många bibliotekarier har byggt i den. Lägg till `?demo` i adressen (till exempel `bokgalaxen.vercel.app/?demo`).
+
+- **Vad som visas:** den riktiga galaxen (från servern, eller startfilen utan server) med alla riktiga kopplingar, plus slumpade kopplingar så att **varje bok har minst en koppling**, och därtill ungefär 0,6 extra kopplingar per bok. Oftast inom samma genre (typerna samma stämning, berättarrösten, nästa steg), ibland över genregränsen (samma tema, annan genre). "För den som läser serien" slumpas aldrig. Böcker med många kopplingar får lättare fler, så att några stjärnor blir stora.
+- **Märkning:** de slumpade kopplingarna har signaturen **"Demo (slumpad)"** och en motivering som säger att de är påhittade. En notis överst på sidan säger samma sak.
+- **Sparas aldrig:** demon räknas fram i webbläsaren varje gång (`src/data/demodata.js`, med fast frö så att den blir likadan). Den skrivs inte till servern, webbläsarens lagring eller exporten, och platserna sparas inte. Byggläget är avstängt med `?demo`. Regeln om att allt innehåll i den riktiga galaxen kommer från människor gäller alltså fortfarande.
+- **Siffror:** startfilen har 387 böcker, varav 72 saknade kopplingar. Demon har 734 kopplingar (431 riktiga). Med urvalet från Libris sammanslaget blir det 787 böcker och 1 345 kopplingar.
+- 3 nya tester i `tests/demodata.test.js`. Kontrollerat i en webbläsare: notisen syns, byggläget går inte att öppna, inga fel i konsolen. Skärmbild: `docs/skarmbilder/demo-galax.png`.
 
 ## Urval från Libris (2026-11-15)
 
@@ -127,7 +138,7 @@ När Vidar har byggt de första böckerna exporteras de och läggs i `public/sta
 
 ## Kontrollerat
 
-- `npm test`: 42 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
+- `npm test`: 55 tester (2026-11-19). Tidigare: 42 tester för datamodell, sammanslagning, lagring, ångra, sökning i galaxen och tolkning av Libris-svar (med riktiga svar sparade i `tests/fixtures`).
 - Byggläget i en riktig webbläsare mot riktiga Libris (2026-11-14): sök, lägg in en bok, sätt tagg, koppla ihop med en ny bok, fel när motiveringen saknas, byt håll, spara, ändra, ta bort, ångra med knappen och med Ctrl+Z, byta läge med en bok vald, omladdning (galaxen och byggläget finns kvar), mobilstorlek. Inga fel i konsolen.
 - I en riktig webbläsare: klick på en stjärna, bokkort, Escape, import, påminnelse om export, export, sparade positioner efter omladdning (ingen stjärna flyttade sig), ny bok utan att resten flyttas, minskad rörelse, mobilstorlek.
 - Skärmbilder finns i `docs/skarmbilder/` (steg 3 och steg 4).
